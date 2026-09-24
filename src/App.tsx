@@ -21,6 +21,7 @@ import {
 import { CinematicCanvas } from './components/CinematicCanvas';
 import { IntroVideo } from './components/IntroVideo';
 import { CustomCursor } from './components/CustomCursor';
+import { CursorGrid } from './components/CursorGrid';
 import { GlitchText } from './components/GlitchText';
 import { FlyingProjects } from './components/FlyingProjects';
 import { HoneycombSkills } from './components/HoneycombSkills';
@@ -452,6 +453,9 @@ export default function App() {
 
       {/* ── Motion Cursor (Active only after intro has completed or skipped) ── */}
       <CustomCursor isActive={introFinished} />
+
+      {/* ── Theme-Matched Cursor Grid Interaction Overlay ── */}
+      <CursorGrid isActive={introFinished} />
 
       {/* ── 1. The Core 300-Frame Cinematic Scroll Canvas Engine ── */}
       <CinematicCanvas />
