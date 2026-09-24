@@ -442,7 +442,12 @@ export default function App() {
     <div className="relative min-h-screen bg-[#080808] text-[#F5F5F7] font-sans selection:bg-[#FF5500] selection:text-[#080808] overflow-x-clip">
       {/* ── 0. Cinematic Motion-Graphics Video Intro / Loading Scene ── */}
       {!introFinished && (
-        <IntroVideo onComplete={() => setIntroFinished(true)} />
+        <IntroVideo
+          onComplete={() => {
+            setIntroFinished(true);
+            scrollController.recalculateLayout();
+          }}
+        />
       )}
 
       {/* ── Motion Cursor (Active only after intro has completed or skipped) ── */}

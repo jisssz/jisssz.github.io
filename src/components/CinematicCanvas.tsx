@@ -11,22 +11,27 @@ type Props = {
  *
  * Requirements:
  * 1. Pinned full-viewport background: fixed inset-0, z-index 0.
- * 2. 16:9 Aspect-ratio cover scaling with top-biased centering (never crops face/head).
+ * 2. 16:9 Aspect-ratio contain scaling with top-biased centering (never crops face/head).
  * 3. Native document scroll single source of truth:
- *      window.scrollY / maxScroll -> progress (0.0 to 1.0) -> targetFrame (0 to 239).
+ *      window.scrollY / maxScroll -> progress (0.0 to 1.0) -> targetFrame (0 to 299).
  * 4. Zero black voids, zero wheel-hijacking, zero artificial scroll libraries.
  * 5. Nearest-frame fallback with automatic re-draw as soon as target frame arrives.
- * 6. Predictive priority preloader around current scroll position (bounded to 6 parallel requests).
+ * 6. High-throughput progressive preloader:
+ *      - Immediate burst of frames 0..20
+ *      - Global keyframe spine (every 5th frame)
+ *      - Complete background fill of all 300 frames with 20 parallel streams
+ *      - High-priority lookahead for immediate scroll neighborhood
  */
 export function CinematicCanvas({ onProgressChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Cached frame images array [0..239]
+  // Cached frame images array [0..299]
   const images = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES).fill(null));
   const requestedSet = useRef<Set<number>>(new Set());
+  const priorityQueue = useRef<number[]>([]);
   const activeCountRef = useRef<number>(0);
-  const MAX_CONCURRENCY = 6;
+  const MAX_CONCURRENCY = 20;
 
   // Single source of truth for rendering
   const targetFrameRef = useRef<number>(0);
@@ -39,6 +44,7 @@ export function CinematicCanvas({ onProgressChange }: Props) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    if (!img.complete || img.naturalWidth === 0) return;
 
     const cw = canvas.width;
     const ch = canvas.height;
@@ -107,13 +113,19 @@ export function CinematicCanvas({ onProgressChange }: Props) {
   // Find nearest loaded frame in cache
   const getNearestLoadedImage = useCallback((target: number): { img: HTMLImageElement; index: number } | null => {
     const cache = images.current;
-    if (cache[target]) return { img: cache[target]!, index: target };
+    if (cache[target] && cache[target]!.complete && cache[target]!.naturalWidth > 0) {
+      return { img: cache[target]!, index: target };
+    }
 
     for (let d = 1; d < TOTAL_FRAMES; d++) {
       const down = target - d;
-      if (down >= 0 && cache[down]) return { img: cache[down]!, index: down };
+      if (down >= 0 && cache[down] && cache[down]!.complete && cache[down]!.naturalWidth > 0) {
+        return { img: cache[down]!, index: down };
+      }
       const up = target + d;
-      if (up < TOTAL_FRAMES && cache[up]) return { img: cache[up]!, index: up };
+      if (up < TOTAL_FRAMES && cache[up] && cache[up]!.complete && cache[up]!.naturalWidth > 0) {
+        return { img: cache[up]!, index: up };
+      }
     }
     return null;
   }, []);
@@ -131,31 +143,25 @@ export function CinematicCanvas({ onProgressChange }: Props) {
     });
   }, [drawImageToCanvas, getNearestLoadedImage]);
 
-  // Priority queue worker: preloads frames closest to current targetFrame
+  // High-throughput priority queue pump
   const pumpQueueRef = useRef<() => void>(() => {});
 
   const pumpQueue = useCallback(() => {
     while (activeCountRef.current < MAX_CONCURRENCY) {
-      const target = targetFrameRef.current;
       let nextIdx: number | null = null;
 
-      // 1. Immediate neighborhood around current scroll target (radius 16)
-      for (let offset = 0; offset <= 16; offset++) {
-        const down = target + offset;
-        if (down < TOTAL_FRAMES && !requestedSet.current.has(down)) {
-          nextIdx = down;
-          break;
-        }
-        const up = target - offset;
-        if (up >= 0 && !requestedSet.current.has(up)) {
-          nextIdx = up;
+      // 1. Check priority queue first
+      while (priorityQueue.current.length > 0) {
+        const candidate = priorityQueue.current.shift()!;
+        if (!requestedSet.current.has(candidate)) {
+          nextIdx = candidate;
           break;
         }
       }
 
-      // 2. Keyframe spine (every 8th frame for instant scrub coverage)
+      // 2. If priority queue is empty, fill keyframes first (every 5th frame)
       if (nextIdx === null) {
-        for (let i = 0; i < TOTAL_FRAMES; i += 8) {
+        for (let i = 0; i < TOTAL_FRAMES; i += 5) {
           if (!requestedSet.current.has(i)) {
             nextIdx = i;
             break;
@@ -163,9 +169,10 @@ export function CinematicCanvas({ onProgressChange }: Props) {
         }
       }
 
-      // 3. Sequential fill outward from target
+      // 3. Sequential fill outward from current target
       if (nextIdx === null) {
-        for (let d = 17; d < TOTAL_FRAMES; d++) {
+        const target = targetFrameRef.current;
+        for (let d = 0; d < TOTAL_FRAMES; d++) {
           const f = target + d;
           if (f < TOTAL_FRAMES && !requestedSet.current.has(f)) {
             nextIdx = f;
@@ -179,12 +186,13 @@ export function CinematicCanvas({ onProgressChange }: Props) {
         }
       }
 
-      if (nextIdx === null) break; // All requested
+      if (nextIdx === null) break; // All 300 frames have been requested!
 
       requestedSet.current.add(nextIdx);
       activeCountRef.current++;
 
       const img = new Image();
+      img.decoding = 'async';
       img.src = getFrameUrl(nextIdx);
       const loadingIdx = nextIdx;
 
@@ -192,14 +200,14 @@ export function CinematicCanvas({ onProgressChange }: Props) {
         images.current[loadingIdx] = img;
         activeCountRef.current--;
 
-        // Redraw if this frame is equal to target or closer than what is currently drawn
+        // Redraw immediately if this frame is equal to target or closer than what is currently drawn
         const curTarget = targetFrameRef.current;
         const curDrawn = drawnFrameRef.current;
         const currentDist = curDrawn >= 0 ? Math.abs(curDrawn - curTarget) : Infinity;
         const newDist = Math.abs(loadingIdx - curTarget);
 
         if (loadingIdx === curTarget || newDist < currentDist) {
-          scheduleRender();
+          drawImageToCanvas(img, loadingIdx);
         }
 
         pumpQueueRef.current();
@@ -210,10 +218,25 @@ export function CinematicCanvas({ onProgressChange }: Props) {
         pumpQueueRef.current();
       };
     }
-  }, [scheduleRender]);
+  }, [drawImageToCanvas]);
 
   useEffect(() => {
     pumpQueueRef.current = pumpQueue;
+  }, [pumpQueue]);
+
+  // Request high-priority load for frames surrounding current target
+  const prioritizeNeighborhood = useCallback((target: number) => {
+    const urgent: number[] = [];
+    urgent.push(target);
+    for (let o = 1; o <= 6; o++) {
+      if (target + o < TOTAL_FRAMES) urgent.push(target + o);
+      if (target - o >= 0) urgent.push(target - o);
+    }
+    const needed = urgent.filter((idx) => !requestedSet.current.has(idx));
+    if (needed.length > 0) {
+      priorityQueue.current = [...needed, ...priorityQueue.current];
+      pumpQueue();
+    }
   }, [pumpQueue]);
 
   // Responsive canvas size with DPR cap
@@ -241,14 +264,21 @@ export function CinematicCanvas({ onProgressChange }: Props) {
 
     const unsubscribe = scrollController.subscribeCanvas((target, progress) => {
       targetFrameRef.current = target;
-      const best = getNearestLoadedImage(target);
-      if (best) {
-        drawImageToCanvas(best.img, best.index);
+      prioritizeNeighborhood(target);
+
+      const exact = images.current[target];
+      if (exact && exact.complete && exact.naturalWidth > 0) {
+        drawImageToCanvas(exact, target);
+      } else {
+        const best = getNearestLoadedImage(target);
+        if (best) {
+          drawImageToCanvas(best.img, best.index);
+        }
       }
+
       if (onProgressChange) {
         onProgressChange(progress, target + 1);
       }
-      pumpQueue();
     });
 
     const onResize = () => {
@@ -265,12 +295,13 @@ export function CinematicCanvas({ onProgressChange }: Props) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [drawImageToCanvas, getNearestLoadedImage, onProgressChange, pumpQueue, resizeCanvas]);
+  }, [drawImageToCanvas, getNearestLoadedImage, onProgressChange, prioritizeNeighborhood, resizeCanvas]);
 
-  // Initial load: fetch Frame 001 immediately and paint it
+  // Initial load: fetch Frame 001 immediately, paint it, and launch high-throughput preloader
   useEffect(() => {
     let unmounted = false;
     const f1 = new Image();
+    f1.decoding = 'async';
     f1.src = getFrameUrl(0);
     requestedSet.current.add(0);
 
@@ -281,6 +312,13 @@ export function CinematicCanvas({ onProgressChange }: Props) {
       drawImageToCanvas(f1, 0);
 
       setIsLoaded(true);
+
+      // Preload first 20 frames immediately into priority queue
+      const initialBurst: number[] = [];
+      for (let i = 1; i <= 20; i++) {
+        initialBurst.push(i);
+      }
+      priorityQueue.current = initialBurst;
       pumpQueue();
     };
 

@@ -97,7 +97,15 @@ class MasterScrollController {
 
   private renderTick = () => {
     this.scheduled = false;
-    this.scrollY = window.scrollY || window.pageYOffset || 0;
+    this.scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    const docHeight = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+      window.innerHeight || 800
+    );
+    this.windowHeight = window.innerHeight || 800;
+    this.maxScroll = Math.max(1, docHeight - this.windowHeight);
 
     const globalProgress = Math.min(1, Math.max(0, this.scrollY / this.maxScroll));
     const targetFrame = Math.min(
