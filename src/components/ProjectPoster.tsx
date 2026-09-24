@@ -14,10 +14,7 @@ export const ProjectPoster = forwardRef<HTMLDivElement, ProjectPosterProps>(
       <div
         ref={ref}
         data-project-index={index}
-        className="absolute top-[52%] left-1/2 w-[92vw] sm:w-[560px] md:w-[620px] max-w-[660px] select-none pointer-events-none will-change-transform"
-        style={{
-          transformOrigin: '50% 50%',
-        }}
+        className="w-full select-none pointer-events-auto"
       >
         <div className="relative rounded-[28px] sm:rounded-[34px] bg-[#09090D]/90 backdrop-blur-3xl border border-white/[0.14] p-6 sm:p-9 shadow-[0_30px_90px_rgba(0,0,0,0.92),0_0_40px_rgba(255,85,0,0.14)] overflow-hidden transition-colors duration-300 hover:border-[#FF5500]/50 group">
           {/* Subtle Ambient Corner Glow */}

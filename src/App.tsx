@@ -402,12 +402,12 @@ export default function App() {
 
   // Direct header & progress bar updates on single rAF tick without re-rendering App
   useEffect(() => {
-    return scrollController.subscribe((state) => {
+    return scrollController.subscribeGlobal((globalProgress) => {
       if (progressBarRef.current) {
-        progressBarRef.current.style.width = `${Math.round(state.globalProgress * 100)}%`;
+        progressBarRef.current.style.width = `${Math.round(globalProgress * 100)}%`;
       }
       if (headerRef.current) {
-        if (state.globalProgress > 0.02) {
+        if (globalProgress > 0.02) {
           headerRef.current.classList.add(
             'bg-[#0A0A0C]/80',
             'backdrop-blur-2xl',

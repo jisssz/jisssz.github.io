@@ -59,12 +59,8 @@ export const HoneycombSkills: FC<HoneycombSkillsProps> = ({ onContactClick }) =>
     const sectionEl = sectionRef.current;
     if (!sectionEl) return;
 
-    // Register section for document coordinate calculation
-    const unregisterSection = scrollController.registerSection('skills', sectionEl);
-
-    // Subscribe to unified scroll progress
-    const unsubscribeScroll = scrollController.subscribe((state) => {
-      const p = state.getSectionProgress('skills');
+    // Register section to master scroll controller
+    const unregisterSection = scrollController.registerSection('skills', sectionEl, (p) => {
       const cluster = clusterRef.current;
       if (!cluster) return;
 
@@ -117,7 +113,6 @@ export const HoneycombSkills: FC<HoneycombSkillsProps> = ({ onContactClick }) =>
 
     return () => {
       unregisterSection();
-      unsubscribeScroll();
     };
   }, []);
 

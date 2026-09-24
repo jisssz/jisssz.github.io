@@ -14,13 +14,10 @@ export function FlyingProjects() {
     const section = sectionRef.current;
     if (!section) return;
 
-    // Register section for deterministic coordinate metrics
-    const unregisterSection = scrollController.registerSection('showcase', section);
-
     // Direct transform renderer called on the unified rAF tick
     const applyTransforms = (progress: number) => {
       const total = FLYING_PROJECTS.length;
-      // Deterministic mapping: physically attached to scroll position
+      // Deterministic 1:1 mapping: physically attached to scroll position
       const activeFloat = progress * (total - 1);
 
       // Update minimal index indicator only when integer index changes
@@ -31,15 +28,13 @@ export function FlyingProjects() {
       }
 
       const isMobile = window.innerWidth < 640;
-      const zGap = isMobile ? 220 : 360;
-      const yGap = isMobile ? 20 : 32;
 
       for (let i = 0; i < total; i++) {
         const cardEl = cardRefs.current[i];
         if (!cardEl) continue;
 
         // delta: relative distance of card i from active focal plane
-        // When delta is ~0, card i is FRONT and centered
+        // When delta is 0, card i is exactly at the FRONT focal plane
         const delta = activeFloat - i;
 
         let z: number;
@@ -51,9 +46,9 @@ export function FlyingProjects() {
         let blur: number;
         let pointerEvents: string;
 
-        // ── 1. HOLD ZONE: |delta| <= 0.22 ──
-        // Active card stays locked at FRONT with 100% opacity, 0 rotation, and full interactivity
-        if (Math.abs(delta) <= 0.22) {
+        // ── 1. ACTIVE FOCAL ZONE: |delta| <= 0.35 ──
+        // Only ONE project card is active, 100% sharp, readable, with no ghosting
+        if (Math.abs(delta) <= 0.35) {
           z = 0;
           y = 0;
           scale = 1.0;
@@ -62,52 +57,53 @@ export function FlyingProjects() {
           opacity = 1.0;
           blur = 0;
           pointerEvents = 'auto';
-        } else if (delta < -0.22) {
-          // ── 2. APPROACHING FROM DEPTH (delta < -0.22, upcoming cards) ──
-          const u = -(delta + 0.22); // distance into depth (u > 0)
-          z = -u * zGap;
-          y = u * yGap;
-          scale = Math.max(0.48, 1.0 - u * 0.14);
-          rotX = Math.min(isMobile ? 5 : 8, u * 3.5);
-          rotZ = (i % 2 === 0 ? 1 : -1) * Math.min(isMobile ? 2 : 3, u * 1.3);
-          opacity = u < 2.5 ? Math.max(0, 1.0 - u * 0.38) : 0;
-          blur = Math.min(5, u * 1.8);
+        } else if (delta < -0.35) {
+          // ── 2. APPROACHING FROM DEPTH (upcoming cards) ──
+          const u = -(delta + 0.35); // distance into depth (u > 0)
+          z = -350 - u * 350; // starts at least 350px deep behind
+          y = u * 20;
+          scale = Math.max(0.68, 0.92 - u * 0.12);
+          rotX = Math.min(isMobile ? 4 : 6, u * 3.0);
+          rotZ = (i % 2 === 0 ? 1 : -1) * Math.min(isMobile ? 1.5 : 2.5, u * 1.0);
+          // Only show up to 20% opacity and blurred when approaching; cull completely when u > 0.65
+          opacity = u < 0.65 ? Math.max(0, ((0.65 - u) / 0.65) * 0.2) : 0;
+          blur = 4 + u * 3;
           pointerEvents = 'none';
         } else {
-          // ── 3. EXITING FORWARD (delta > 0.22, past cards flying forward) ──
-          const v = delta - 0.22; // distance exiting forward (v > 0)
-          z = v * (zGap * 0.75); // moves forward towards viewer
-          y = -v * (yGap * 3.6); // glides smoothly upwards
-          scale = 1.0 + v * 0.22;
-          rotX = -v * 6.5;
-          rotZ = (i % 2 === 0 ? -1 : 1) * 3.0;
-          opacity = Math.max(0, 1.0 - v * 1.35);
-          blur = v * 4.0;
+          // ── 3. EXITING FORWARD (past cards flying forward towards viewer) ──
+          const v = delta - 0.35; // distance exiting forward (v > 0)
+          z = v * 280; // moves forward towards viewer
+          y = -v * 60; // glides smoothly upwards
+          scale = 1.0 + v * 0.16;
+          rotX = -v * 5.5;
+          rotZ = (i % 2 === 0 ? -1 : 1) * 2.5;
+          opacity = Math.max(0, 1.0 - v * 2.8); // vanishes rapidly before next card arrives
+          blur = v * 5;
           pointerEvents = 'none';
         }
 
-        if (opacity <= 0.005) {
-          cardEl.style.visibility = 'hidden';
+        // Hard culling: prevent any overlapping unreadable text or ghosting
+        if (opacity <= 0.01) {
+          cardEl.style.display = 'none';
           cardEl.style.opacity = '0';
         } else {
+          cardEl.style.display = 'block';
           cardEl.style.visibility = 'visible';
           cardEl.style.opacity = String(opacity);
           cardEl.style.transform = `translate3d(-50%, calc(-50% + ${y.toFixed(1)}px), ${z.toFixed(1)}px) rotateX(${rotX.toFixed(2)}deg) rotateZ(${rotZ.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
-          cardEl.style.filter = blur > 0.4 ? `blur(${blur.toFixed(1)}px)` : 'none';
+          cardEl.style.filter = blur > 0.5 ? `blur(${blur.toFixed(1)}px)` : 'none';
           cardEl.style.pointerEvents = pointerEvents;
         }
       }
     };
 
-    // Subscribe to unified scroll progress
-    const unsubscribeScroll = scrollController.subscribe((state) => {
-      const progress = state.getSectionProgress('showcase');
+    // Register section to master scroll controller
+    const unregisterSection = scrollController.registerSection('showcase', section, (progress) => {
       applyTransforms(progress);
     });
 
     return () => {
       unregisterSection();
-      unsubscribeScroll();
     };
   }, []);
 
@@ -166,7 +162,7 @@ export function FlyingProjects() {
             <div
               key={project.id}
               ref={(el) => { cardRefs.current[i] = el; }}
-              className="absolute top-1/2 left-1/2 w-full max-w-lg sm:max-w-2xl md:max-w-3xl will-change-transform"
+              className="absolute top-1/2 left-1/2 w-[90vw] sm:w-[560px] md:w-[620px] max-w-[640px] will-change-transform"
               style={{
                 transformStyle: 'preserve-3d',
                 transformOrigin: 'center center',
@@ -185,7 +181,7 @@ export function FlyingProjects() {
           </div>
 
           <div className="hidden md:flex items-center gap-4 text-[11px] text-[#8E8E93]">
-            <span>DEPTH: 360PX Z-STEP</span>
+            <span>DEPTH: 350PX Z-STEP</span>
             <span className="text-white/20">&bull;</span>
             <span>60 FPS DETERMINISTIC MATRIX</span>
           </div>

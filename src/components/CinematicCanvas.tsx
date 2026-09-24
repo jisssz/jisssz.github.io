@@ -235,26 +235,25 @@ export function CinematicCanvas({ onProgressChange }: Props) {
     }
   }, [scheduleRender]);
 
-  // Single source of truth scroll subscriber
+  // Master Scroll Subscriber — synchronous 1:1 painting on the same animation frame
   useEffect(() => {
     resizeCanvas();
 
-    const unsubscribe = scrollController.subscribe((state) => {
-      const target = Math.min(
-        TOTAL_FRAMES - 1,
-        Math.max(0, Math.round(state.globalProgress * (TOTAL_FRAMES - 1)))
-      );
+    const unsubscribe = scrollController.subscribeCanvas((target, progress) => {
       targetFrameRef.current = target;
-      if (onProgressChange) {
-        onProgressChange(state.globalProgress, target + 1);
+      const best = getNearestLoadedImage(target);
+      if (best) {
+        drawImageToCanvas(best.img, best.index);
       }
-      scheduleRender();
+      if (onProgressChange) {
+        onProgressChange(progress, target + 1);
+      }
       pumpQueue();
     });
 
     const onResize = () => {
       resizeCanvas();
-      scrollController.recalculateMetrics();
+      scrollController.recalculateLayout();
     };
 
     window.addEventListener('resize', onResize, { passive: true });
@@ -266,7 +265,7 @@ export function CinematicCanvas({ onProgressChange }: Props) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [onProgressChange, pumpQueue, resizeCanvas, scheduleRender]);
+  }, [drawImageToCanvas, getNearestLoadedImage, onProgressChange, pumpQueue, resizeCanvas]);
 
   // Initial load: fetch Frame 001 immediately and paint it
   useEffect(() => {

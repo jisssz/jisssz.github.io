@@ -1,33 +1,36 @@
 // ============================================================================
-// CENTRALIZED SCROLL CONTROLLER
-// Single source of truth for all scroll progress in the portfolio.
-// Exactly ONE window scroll listener and ONE requestAnimationFrame scheduler.
-// Zero layout thrashing, zero multiple RAF loops, deterministic synchronization.
+// MASTER SCROLL CONTROLLER
+// Single authoritative scroll progress system across the portfolio.
+// Exactly ONE window scroll listener and ONE synchronous requestAnimationFrame scheduler.
+// Synchronously updates 300-frame canvas, 3D projects, and 3D honeycomb in the SAME frame.
+// Zero layout thrashing, zero double-rAF delay, zero competing scroll listeners.
 // ============================================================================
 
-export interface SectionMetrics {
-  id: string;
-  element: HTMLElement;
-  top: number;
-  height: number;
+export const TOTAL_CANVAS_FRAMES = 300;
+
+export interface SectionRange {
+  start: number; // document scrollY where section begins sticky interaction
+  end: number;   // document scrollY where section finishes
 }
 
-export interface ScrollState {
-  globalProgress: number; // 0.0 to 1.0
-  scrollY: number;
-  maxScroll: number;
-  getSectionProgress: (sectionId: string) => number;
-}
+type CanvasSubscriber = (targetFrame: number, progress: number) => void;
+type SectionSubscriber = (localProgress: number, scrollY: number) => void;
+type GlobalSubscriber = (globalProgress: number, scrollY: number) => void;
 
-type ScrollSubscriber = (state: ScrollState) => void;
-
-class ScrollController {
-  private subscribers = new Set<ScrollSubscriber>();
-  private sections = new Map<string, SectionMetrics>();
+class MasterScrollController {
   private scheduled = false;
   private scrollY = 0;
   private maxScroll = 1;
-  private windowHeight = 1;
+  private windowHeight = 800;
+
+  private canvasCallbacks = new Set<CanvasSubscriber>();
+  private sectionCallbacks = new Map<string, SectionSubscriber>();
+  private globalCallbacks = new Set<GlobalSubscriber>();
+
+  // Cached section DOM elements and their document top/height
+  private sectionElements = new Map<string, HTMLElement>();
+  private sectionRanges = new Map<string, SectionRange>();
+
   private isInitialized = false;
 
   constructor() {
@@ -40,17 +43,17 @@ class ScrollController {
     if (this.isInitialized) return;
     this.isInitialized = true;
 
-    this.recalculateMetrics();
+    this.recalculateLayout();
 
     window.addEventListener('scroll', this.handleScroll, { passive: true });
     window.addEventListener('resize', this.handleResize, { passive: true });
     window.addEventListener('orientationchange', this.handleResize, { passive: true });
   }
 
-  public recalculateMetrics = () => {
+  public recalculateLayout = () => {
     if (typeof window === 'undefined') return;
 
-    this.windowHeight = window.innerHeight || 1;
+    this.windowHeight = window.innerHeight || 800;
     const docHeight = Math.max(
       document.documentElement.scrollHeight,
       document.body.scrollHeight,
@@ -59,108 +62,140 @@ class ScrollController {
     this.maxScroll = Math.max(1, docHeight - this.windowHeight);
     this.scrollY = window.scrollY || window.pageYOffset || 0;
 
-    // Cache section document positions without reading in scroll loop
-    this.sections.forEach((metric) => {
-      if (metric.element && metric.element.isConnected) {
-        const box = metric.element.getBoundingClientRect();
-        metric.top = box.top + this.scrollY;
-        metric.height = box.height;
+    // Cache exact document coordinates of registered sections
+    this.sectionElements.forEach((el, id) => {
+      if (el && el.isConnected) {
+        const box = el.getBoundingClientRect();
+        const top = box.top + this.scrollY;
+        const height = box.height;
+        const scrollDist = height - this.windowHeight;
+
+        this.sectionRanges.set(id, {
+          start: top,
+          end: top + Math.max(1, scrollDist),
+        });
       }
     });
 
-    this.scheduleTick();
+    // Schedule immediate update
+    this.scheduleFrame();
   };
 
   private handleScroll = () => {
-    this.scheduleTick();
+    this.scheduleFrame();
   };
 
   private handleResize = () => {
-    this.recalculateMetrics();
+    this.recalculateLayout();
   };
 
-  private scheduleTick = () => {
+  private scheduleFrame = () => {
     if (this.scheduled) return;
     this.scheduled = true;
-    requestAnimationFrame(this.tick);
+    requestAnimationFrame(this.renderTick);
   };
 
-  private tick = () => {
+  private renderTick = () => {
     this.scheduled = false;
     this.scrollY = window.scrollY || window.pageYOffset || 0;
 
     const globalProgress = Math.min(1, Math.max(0, this.scrollY / this.maxScroll));
+    const targetFrame = Math.min(
+      TOTAL_CANVAS_FRAMES - 1,
+      Math.max(0, Math.round(globalProgress * (TOTAL_CANVAS_FRAMES - 1)))
+    );
 
-    const state: ScrollState = {
-      globalProgress,
-      scrollY: this.scrollY,
-      maxScroll: this.maxScroll,
-      getSectionProgress: this.getSectionProgress,
-    };
-
-    // Broadcast state to all subscribers within the same frame
-    this.subscribers.forEach((callback) => {
+    // 1. Draw 300-Frame Canvas IMMEDIATELY on this exact frame (no second rAF!)
+    this.canvasCallbacks.forEach((cb) => {
       try {
-        callback(state);
+        cb(targetFrame, globalProgress);
       } catch (err) {
-        console.error('ScrollController subscriber error:', err);
+        console.error('Canvas render error in scroll controller:', err);
+      }
+    });
+
+    // 2. Dispatch section progress to registered sections (Projects, Skills, etc.)
+    this.sectionCallbacks.forEach((cb, id) => {
+      const range = this.sectionRanges.get(id);
+      let localProgress = 0;
+      if (range) {
+        const dist = range.end - range.start;
+        if (dist > 0) {
+          localProgress = Math.min(1, Math.max(0, (this.scrollY - range.start) / dist));
+        }
+      }
+      try {
+        cb(localProgress, this.scrollY);
+      } catch (err) {
+        console.error(`Section render error (${id}):`, err);
+      }
+    });
+
+    // 3. Dispatch global progress (header progress bar, etc.)
+    this.globalCallbacks.forEach((cb) => {
+      try {
+        cb(globalProgress, this.scrollY);
+      } catch (err) {
+        console.error('Global subscriber error in scroll controller:', err);
       }
     });
   };
 
-  public getSectionProgress = (sectionId: string): number => {
-    const section = this.sections.get(sectionId);
-    if (!section) return 0;
-
-    const scrollDist = section.height - this.windowHeight;
-    if (scrollDist <= 0) {
-      // Normal single viewport section: progress based on viewport entry
-      const relativeTop = section.top - this.scrollY;
-      const progress = (this.windowHeight - relativeTop) / (this.windowHeight + section.height);
-      return Math.min(1, Math.max(0, progress));
-    }
-
-    // Tall sticky scroll tracks (e.g. #showcase, #skills):
-    // 0.0 when top of section meets top of viewport, 1.0 when scroll reaches bottom
-    const rawProgress = (this.scrollY - section.top) / scrollDist;
-    return Math.min(1, Math.max(0, rawProgress));
-  };
-
-  public registerSection(id: string, element: HTMLElement): () => void {
-    if (!element) return () => {};
-
-    const box = element.getBoundingClientRect();
-    const currentScrollY = typeof window !== 'undefined' ? window.scrollY || 0 : 0;
-
-    this.sections.set(id, {
-      id,
-      element,
-      top: box.top + currentScrollY,
-      height: box.height,
-    });
-
-    // Schedule update so initial progress is immediately known
-    this.scheduleTick();
+  // Register the 300-frame canvas painter
+  public subscribeCanvas(callback: CanvasSubscriber): () => void {
+    this.canvasCallbacks.add(callback);
+    // Initial paint
+    const globalProgress = Math.min(1, Math.max(0, this.scrollY / this.maxScroll));
+    const targetFrame = Math.min(
+      TOTAL_CANVAS_FRAMES - 1,
+      Math.max(0, Math.round(globalProgress * (TOTAL_CANVAS_FRAMES - 1)))
+    );
+    callback(targetFrame, globalProgress);
 
     return () => {
-      this.sections.delete(id);
+      this.canvasCallbacks.delete(callback);
     };
   }
 
-  public subscribe(callback: ScrollSubscriber): () => void {
-    this.subscribers.add(callback);
+  // Register a tall sticky section by DOM element ref
+  public registerSection(id: string, element: HTMLElement, callback: SectionSubscriber): () => void {
+    if (!element) return () => {};
 
-    // Initial broadcast to immediately synchronize on mount
-    const globalProgress = Math.min(1, Math.max(0, this.scrollY / this.maxScroll));
-    callback({
-      globalProgress,
-      scrollY: this.scrollY,
-      maxScroll: this.maxScroll,
-      getSectionProgress: this.getSectionProgress,
+    this.sectionElements.set(id, element);
+    this.sectionCallbacks.set(id, callback);
+
+    const box = element.getBoundingClientRect();
+    const currentScrollY = typeof window !== 'undefined' ? window.scrollY || 0 : 0;
+    const top = box.top + currentScrollY;
+    const height = box.height;
+    const scrollDist = height - (typeof window !== 'undefined' ? window.innerHeight : 800);
+
+    this.sectionRanges.set(id, {
+      start: top,
+      end: top + Math.max(1, scrollDist),
     });
 
+    // Initial trigger
+    const range = this.sectionRanges.get(id)!;
+    const dist = range.end - range.start;
+    const localProgress = dist > 0 ? Math.min(1, Math.max(0, (currentScrollY - range.start) / dist)) : 0;
+    callback(localProgress, currentScrollY);
+
     return () => {
-      this.subscribers.delete(callback);
+      this.sectionElements.delete(id);
+      this.sectionRanges.delete(id);
+      this.sectionCallbacks.delete(id);
+    };
+  }
+
+  // Register global UI subscriber (header line, etc.)
+  public subscribeGlobal(callback: GlobalSubscriber): () => void {
+    this.globalCallbacks.add(callback);
+    const globalProgress = Math.min(1, Math.max(0, this.scrollY / this.maxScroll));
+    callback(globalProgress, this.scrollY);
+
+    return () => {
+      this.globalCallbacks.delete(callback);
     };
   }
 
@@ -170,11 +205,13 @@ class ScrollController {
       window.removeEventListener('resize', this.handleResize);
       window.removeEventListener('orientationchange', this.handleResize);
     }
-    this.subscribers.clear();
-    this.sections.clear();
+    this.canvasCallbacks.clear();
+    this.sectionCallbacks.clear();
+    this.globalCallbacks.clear();
+    this.sectionElements.clear();
+    this.sectionRanges.clear();
     this.isInitialized = false;
   }
 }
 
-// Global singleton instance
-export const scrollController = new ScrollController();
+export const scrollController = new MasterScrollController();
