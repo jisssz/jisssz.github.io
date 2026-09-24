@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { CinematicCanvas } from './components/CinematicCanvas';
 import { IntroVideo } from './components/IntroVideo';
+import { CustomCursor } from './components/CustomCursor';
+import { WarpText } from './components/WarpText';
 import { TOTAL_FRAMES } from './lib/scenes';
 import { linkedInPosts, linkedInProfile } from './data/linkedin';
 
@@ -520,6 +522,9 @@ export default function App() {
         <IntroVideo onComplete={() => setIntroFinished(true)} />
       )}
 
+      {/* ── Motion Cursor (Active only after intro has completed or skipped) ── */}
+      <CustomCursor isActive={introFinished} />
+
       {/* ── 1. The Core 300-Frame Cinematic Scroll Canvas Engine ── */}
       <CinematicCanvas onProgressChange={handleProgressChange} />
 
@@ -716,13 +721,34 @@ export default function App() {
                 <span className="h-1.5 w-1.5 rounded-full bg-[#FF5500] shadow-[0_0_8px_#FF5500]" />
                 <span>[ COMPUTER SCIENCE &bull; DATA SCIENCE UNDERGRADUATE ]</span>
               </div>
-              <h1 className="font-display font-extrabold text-5xl sm:text-7xl md:text-8xl lg:text-[6.5rem] text-[#F5F5F7] leading-[0.9] tracking-tight drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
-                JIS SHAJAN
-                <br />
-                <span className="text-[#FF5500] text-3xl sm:text-5xl md:text-6xl block mt-2">
-                  Building at the Intersection.
-                </span>
-              </h1>
+              <div className="relative">
+                {/* ── React Bits WebGL WarpText Layer ── */}
+                <WarpText
+                  text="JIS SHAJAN"
+                  color="#F5F5F7"
+                  warpStrength={0.055}
+                  warpScale={1.7}
+                  speed={0.42}
+                  pointerInfluence={0.38}
+                  pointerStrength={0.28}
+                  refraction={0.014}
+                  ripple
+                  fontSize="clamp(3.5rem, 8vw, 6.5rem)"
+                  fontWeight={800}
+                  fontFamily="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
+                  letterSpacing="-0.04em"
+                  lineHeight={1}
+                  align="left"
+                  className="max-w-[750px] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]"
+                  style={{ height: 'clamp(85px, 13vw, 140px)', minHeight: '85px' }}
+                />
+                <h1 className="font-display font-extrabold tracking-tight mt-1">
+                  <span className="sr-only">JIS SHAJAN — </span>
+                  <span className="text-[#FF5500] text-3xl sm:text-5xl md:text-6xl block font-display font-extrabold leading-tight">
+                    Building at the Intersection.
+                  </span>
+                </h1>
+              </div>
             </div>
 
             {/* Right Supporting Copy & Dual-Pill CTA */}

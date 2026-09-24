@@ -1,156 +1,208 @@
-import { useEffect, useState } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { cursorSpring } from '../lib/motion';
+import { useEffect, useRef, useState } from 'react';
 
-type CursorMode = 'default' | 'interactive' | 'project' | 'hidden';
+interface CustomCursorProps {
+  isActive?: boolean;
+}
 
-export function CustomCursor() {
-  const [mode, setMode] = useState<CursorMode>('default');
-  const [projectText, setProjectText] = useState('VIEW');
-  const [visible, setVisible] = useState(false);
+export function CustomCursor({ isActive = true }: CustomCursorProps) {
+  const cursorRef = useRef<HTMLDivElement>(null);
+  const dotRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
 
-  // Raw pointer coordinates
-  const mouseX = useMotionValue(-100);
-  const mouseY = useMotionValue(-100);
-
-  // Smooth spring coordinates
-  const springX = useSpring(mouseX, cursorSpring);
-  const springY = useSpring(mouseY, cursorSpring);
-
-  // Micro dot coordinates (faster spring for crisp center tracking)
-  const dotX = useSpring(mouseX, { stiffness: 900, damping: 45, mass: 0.1 });
-  const dotY = useSpring(mouseY, { stiffness: 900, damping: 45, mass: 0.1 });
-
-  useEffect(() => {
-    // Disable on touch devices, small screens, and reduced-motion preference
+  const [isSupported] = useState(() => {
+    if (typeof window === 'undefined') return false;
     const isCoarse = window.matchMedia('(pointer: coarse)').matches;
     const isSmall = window.innerWidth < 768;
     const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return !isCoarse && !isSmall && !isReduced;
+  });
 
-    if (isCoarse || isSmall || isReduced) {
-      return;
-    }
+  useEffect(() => {
+    if (!isSupported || !isActive) return undefined;
 
-    const move = (e: PointerEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-      if (!visible) setVisible(true);
+    let rafId = 0;
+    let targetX = -100;
+    let targetY = -100;
+    let currentX = -100;
+    let currentY = -100;
+    let dotX = -100;
+    let dotY = -100;
+
+    let isHoveringInteractive = false;
+    let isHoveringProject = false;
+    let isVisible = false;
+    let customText = '';
+
+    const cursorEl = cursorRef.current;
+    const dotEl = dotRef.current;
+    const textEl = textRef.current;
+
+    const onPointerMove = (e: PointerEvent) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      if (!isVisible) {
+        isVisible = true;
+        currentX = targetX;
+        currentY = targetY;
+        dotX = targetX;
+        dotY = targetY;
+        if (cursorEl) cursorEl.style.opacity = '1';
+        if (dotEl) dotEl.style.opacity = '1';
+      }
     };
 
-    const handleOver = (e: PointerEvent) => {
+    const onPointerOver = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
       const projectEl = target.closest('[data-cursor="project"]');
       if (projectEl) {
-        setMode('project');
-        const customLabel = projectEl.getAttribute('data-cursor-text');
-        setProjectText(customLabel || 'VIEW');
+        isHoveringProject = true;
+        isHoveringInteractive = false;
+        customText = projectEl.getAttribute('data-cursor-text') || 'VIEW ↗';
         return;
       }
 
-      const interactiveEl = target.closest('a, button, [data-cursor="interactive"], input, textarea');
+      const interactiveEl = target.closest('a, button, [role="button"], input, textarea, select, [data-cursor="interactive"]');
       if (interactiveEl) {
-        setMode('interactive');
+        isHoveringInteractive = true;
+        isHoveringProject = false;
+        customText = '';
         return;
       }
 
-      setMode('default');
+      isHoveringInteractive = false;
+      isHoveringProject = false;
+      customText = '';
     };
 
-    const handleLeaveWindow = () => {
-      setVisible(false);
+    const onMouseLeave = () => {
+      isVisible = false;
+      if (cursorEl) cursorEl.style.opacity = '0';
+      if (dotEl) dotEl.style.opacity = '0';
     };
 
-    const handleEnterWindow = () => {
-      setVisible(true);
+    const onMouseEnter = () => {
+      isVisible = true;
+      if (cursorEl) cursorEl.style.opacity = '1';
+      if (dotEl) dotEl.style.opacity = '1';
     };
 
-    window.addEventListener('pointermove', move, { passive: true });
-    window.addEventListener('pointerover', handleOver, { passive: true });
-    document.addEventListener('mouseleave', handleLeaveWindow);
-    document.addEventListener('mouseenter', handleEnterWindow);
-    document.documentElement.classList.add('has-custom-cursor');
+    // Animation loop using translate3d and lerp
+    const tick = () => {
+      // Lerp for outer smooth ring
+      currentX += (targetX - currentX) * 0.18;
+      currentY += (targetY - currentY) * 0.18;
+
+      // Snappier lerp for inner precision dot
+      dotX += (targetX - dotX) * 0.55;
+      dotY += (targetY - dotY) * 0.55;
+
+      if (cursorEl) {
+        cursorEl.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+
+        if (isHoveringProject) {
+          cursorEl.style.width = '84px';
+          cursorEl.style.height = '38px';
+          cursorEl.style.borderRadius = '9999px';
+          cursorEl.style.borderColor = 'rgba(255, 85, 0, 0.8)';
+          cursorEl.style.backgroundColor = 'rgba(255, 85, 0, 0.9)';
+          cursorEl.style.boxShadow = '0 0 24px rgba(255, 85, 0, 0.45)';
+          if (textEl) {
+            textEl.textContent = customText;
+            textEl.style.opacity = '1';
+            textEl.style.transform = 'scale(1)';
+          }
+          if (dotEl) dotEl.style.opacity = '0';
+        } else if (isHoveringInteractive) {
+          cursorEl.style.width = '52px';
+          cursorEl.style.height = '52px';
+          cursorEl.style.borderRadius = '9999px';
+          cursorEl.style.borderColor = 'rgba(255, 85, 0, 0.7)';
+          cursorEl.style.backgroundColor = 'rgba(255, 85, 0, 0.12)';
+          cursorEl.style.boxShadow = '0 0 20px rgba(255, 85, 0, 0.3)';
+          if (textEl) {
+            textEl.textContent = '';
+            textEl.style.opacity = '0';
+            textEl.style.transform = 'scale(0.8)';
+          }
+          if (dotEl) {
+            dotEl.style.opacity = isVisible ? '1' : '0';
+            dotEl.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) scale(1.5)`;
+          }
+        } else {
+          cursorEl.style.width = '30px';
+          cursorEl.style.height = '30px';
+          cursorEl.style.borderRadius = '9999px';
+          cursorEl.style.borderColor = 'rgba(245, 245, 247, 0.35)';
+          cursorEl.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
+          cursorEl.style.boxShadow = 'none';
+          if (textEl) {
+            textEl.textContent = '';
+            textEl.style.opacity = '0';
+            textEl.style.transform = 'scale(0.8)';
+          }
+          if (dotEl) {
+            dotEl.style.opacity = isVisible ? '1' : '0';
+            dotEl.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) scale(1)`;
+          }
+        }
+      }
+
+      if (dotEl && !isHoveringInteractive) {
+        dotEl.style.transform = `translate3d(${dotX}px, ${dotY}px, 0) scale(1)`;
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerover', onPointerOver, { passive: true });
+    document.addEventListener('mouseleave', onMouseLeave);
+    document.addEventListener('mouseenter', onMouseEnter);
+
+    rafId = requestAnimationFrame(tick);
 
     return () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerover', handleOver);
-      document.removeEventListener('mouseleave', handleLeaveWindow);
-      document.removeEventListener('mouseenter', handleEnterWindow);
-      document.documentElement.classList.remove('has-custom-cursor');
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerover', onPointerOver);
+      document.removeEventListener('mouseleave', onMouseLeave);
+      document.removeEventListener('mouseenter', onMouseEnter);
     };
-  }, [mouseX, mouseY, visible]);
+  }, [isSupported, isActive]);
 
-  if (typeof window !== 'undefined') {
-    if (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768) {
-      return null;
-    }
+  if (!isSupported || !isActive) {
+    return null;
   }
-
-  const isProject = mode === 'project';
-  const isInteractive = mode === 'interactive';
 
   return (
     <>
-      {/* Outer Spring Follower / Badge */}
-      <motion.div
+      {/* Outer Smooth Motion Follower */}
+      <div
+        ref={cursorRef}
         aria-hidden="true"
-        className="pointer-events-none fixed left-0 top-0 z-[100] hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center md:flex"
+        className="pointer-events-none fixed top-0 left-0 z-[9990] flex items-center justify-center -translate-x-1/2 -translate-y-1/2 border backdrop-blur-[2px] transition-[width,height,border-color,background-color,box-shadow] duration-200 ease-out opacity-0"
         style={{
-          x: springX,
-          y: springY,
-          opacity: visible ? 1 : 0,
-        }}
-        animate={{
-          width: isProject ? 88 : isInteractive ? 48 : 28,
-          height: isProject ? 42 : isInteractive ? 48 : 28,
-          backgroundColor: isProject
-            ? 'rgba(120, 247, 209, 0.95)'
-            : isInteractive
-            ? 'rgba(120, 247, 209, 0.12)'
-            : 'transparent',
-          borderColor: isProject
-            ? '#78f7d1'
-            : isInteractive
-            ? '#78f7d1'
-            : 'rgba(244, 240, 232, 0.4)',
-          borderRadius: isProject ? 999 : 999,
-          backdropFilter: isProject ? 'blur(8px)' : isInteractive ? 'blur(4px)' : 'none',
-        }}
-        transition={{
-          type: 'spring',
-          stiffness: 400,
-          damping: 28,
+          width: '30px',
+          height: '30px',
+          borderColor: 'rgba(245, 245, 247, 0.35)',
         }}
       >
-        {isProject && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.7 }}
-            className="flex items-center gap-1 text-[0.62rem] font-black uppercase tracking-[0.2em] text-ink"
-          >
-            {projectText} <span>↗</span>
-          </motion.span>
-        )}
-      </motion.div>
+        <span
+          ref={textRef}
+          className="font-mono text-[10px] font-black uppercase tracking-wider text-[#080808] transition-all duration-150 opacity-0 select-none"
+        />
+      </div>
 
-      {/* Center Precision Dot (fades when over project badge) */}
-      <motion.div
+      {/* Center Precision Dot */}
+      <div
+        ref={dotRef}
         aria-hidden="true"
-        className="pointer-events-none fixed left-0 top-0 z-[101] hidden -translate-x-1/2 -translate-y-1/2 rounded-full bg-electric md:block"
-        style={{
-          x: dotX,
-          y: dotY,
-        }}
-        animate={{
-          width: isProject ? 0 : isInteractive ? 6 : 4,
-          height: isProject ? 0 : isInteractive ? 6 : 4,
-          opacity: visible && !isProject ? 1 : 0,
-        }}
-        transition={{ duration: 0.15 }}
+        className="pointer-events-none fixed top-0 left-0 z-[9991] w-1.5 h-1.5 rounded-full bg-[#FF5500] shadow-[0_0_8px_#FF5500] -translate-x-1/2 -translate-y-1/2 transition-transform duration-100 ease-out opacity-0"
       />
     </>
   );
 }
 
+export default CustomCursor;
