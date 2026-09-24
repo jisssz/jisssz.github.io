@@ -634,19 +634,19 @@ export default function App() {
           {/* Top Asymmetric Headline Flex: Left Zone | Clear Face Corridor | Right Zone */}
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mt-6 sm:mt-10 w-full">
             {/* Left Zone: JIS SHAJAN & Tagline (anchored strictly to left margin) */}
-            <div className="w-full lg:w-[320px] xl:w-[380px] shrink-0">
+            <div className="w-full lg:w-[340px] xl:w-[410px] shrink-0">
               <div className="relative">
                 <h1 className="font-display font-extrabold tracking-tight">
                   <GlitchText
                     speed={0.45}
                     enableShadows={true}
                     enableOnHover={false}
-                    className="font-display font-extrabold tracking-tight text-white select-none block leading-[0.92] text-4xl sm:text-5xl md:text-5xl lg:text-[2.85rem] xl:text-[3.35rem]"
+                    className="font-display font-extrabold tracking-tight text-white select-none block leading-[0.92] text-4xl sm:text-5xl md:text-5xl lg:text-[3.25rem] xl:text-[4.2rem] 2xl:text-[4.6rem]"
                   >
                     JIS SHAJAN
                   </GlitchText>
-                  <span className="text-[#FF5500] text-2xl sm:text-3xl md:text-3xl lg:text-[1.75rem] xl:text-[2.1rem] block font-display font-extrabold leading-tight mt-3 sm:mt-4">
-                    Building at the Intersection.
+                  <span className="text-[#FF5500] text-xl sm:text-2xl md:text-2xl lg:text-[1.35rem] xl:text-[1.65rem] 2xl:text-[1.85rem] block font-display font-extrabold leading-[1.2] mt-3 sm:mt-4 max-w-[250px] xl:max-w-[290px]">
+                    Building Technology That Solves Real Problems.
                   </span>
                 </h1>
               </div>
