@@ -21,7 +21,7 @@ import {
 import { CinematicCanvas } from './components/CinematicCanvas';
 import { IntroVideo } from './components/IntroVideo';
 import { CustomCursor } from './components/CustomCursor';
-import { WarpText } from './components/WarpText';
+import { GlitchText } from './components/GlitchText';
 import { TOTAL_FRAMES } from './lib/scenes';
 import { linkedInPosts, linkedInProfile } from './data/linkedin';
 
@@ -476,7 +476,6 @@ const MILESTONES = [
 export default function App() {
   const [introFinished, setIntroFinished] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [currentFrame, setCurrentFrame] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('programming');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -501,10 +500,9 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Sync scroll progress & frame index
-  const handleProgressChange = useCallback((progress: number, frame: number) => {
+  // Sync scroll progress
+  const handleProgressChange = useCallback((progress: number) => {
     setScrollProgress(progress);
-    setCurrentFrame(frame);
   }, []);
 
   const scrollTo = useCallback((id: string) => {
@@ -607,16 +605,8 @@ export default function App() {
             ))}
           </nav>
 
-          {/* Liquid Magnetic CTA Button & Live Frame Readout */}
+          {/* Liquid Magnetic CTA Button */}
           <div className="hidden sm:flex items-center gap-3">
-            {/* Live Frame Indicator Badge */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[10px] font-mono text-[#8E8E93]">
-              <span className="text-[#FF5500] font-bold">F</span>
-              <span>{String(currentFrame).padStart(3, '0')}</span>
-              <span className="text-white/20">/</span>
-              <span>{TOTAL_FRAMES}</span>
-            </div>
-
             <DualTextButton label="LET'S CONNECT" onClick={() => scrollTo('contact')} primary />
           </div>
 
@@ -717,34 +707,17 @@ export default function App() {
           <div className="grid lg:grid-cols-12 gap-8 items-start mt-6 sm:mt-10">
             {/* Left Headline */}
             <div className="lg:col-span-7">
-              <div className="font-mono text-xs font-semibold text-[#FF5500] mb-3 tracking-wider flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#FF5500] shadow-[0_0_8px_#FF5500]" />
-                <span>[ COMPUTER SCIENCE &bull; DATA SCIENCE UNDERGRADUATE ]</span>
-              </div>
               <div className="relative">
-                {/* ── React Bits WebGL WarpText Layer ── */}
-                <WarpText
-                  text="JIS SHAJAN"
-                  color="#F5F5F7"
-                  warpStrength={0.055}
-                  warpScale={1.7}
-                  speed={0.42}
-                  pointerInfluence={0.38}
-                  pointerStrength={0.28}
-                  refraction={0.014}
-                  ripple
-                  fontSize="clamp(3.5rem, 8vw, 6.5rem)"
-                  fontWeight={800}
-                  fontFamily="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
-                  letterSpacing="-0.04em"
-                  lineHeight={1}
-                  align="left"
-                  className="max-w-[750px] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]"
-                  style={{ height: 'clamp(85px, 13vw, 140px)', minHeight: '85px' }}
-                />
-                <h1 className="font-display font-extrabold tracking-tight mt-1">
-                  <span className="sr-only">JIS SHAJAN — </span>
-                  <span className="text-[#FF5500] text-3xl sm:text-5xl md:text-6xl block font-display font-extrabold leading-tight">
+                <h1 className="font-display font-extrabold tracking-tight">
+                  <GlitchText
+                    speed={0.45}
+                    enableShadows={true}
+                    enableOnHover={false}
+                    className="font-display font-extrabold tracking-tight text-white select-none block leading-[0.92] text-4xl sm:text-6xl md:text-7xl lg:text-[5.25rem] xl:text-[6rem]"
+                  >
+                    JIS SHAJAN
+                  </GlitchText>
+                  <span className="text-[#FF5500] text-3xl sm:text-5xl md:text-6xl block font-display font-extrabold leading-tight mt-3 sm:mt-4">
                     Building at the Intersection.
                   </span>
                 </h1>
@@ -752,7 +725,7 @@ export default function App() {
             </div>
 
             {/* Right Supporting Copy & Dual-Pill CTA */}
-            <div className="lg:col-span-5 lg:pt-14 lg:pl-6 space-y-4">
+            <div className="lg:col-span-5 lg:pt-6 lg:pl-6 space-y-4">
               <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-[#F5F5F7] leading-snug drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
                 Technology, Data, Product &amp; Innovation.
               </h2>
@@ -774,28 +747,29 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bottom Floating Status Banner */}
-          <div className="mt-auto pt-14 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.08] text-[#FF5500]">
-                <MapPin size={16} />
-              </span>
-              <div>
-                <div className="font-display text-sm font-bold text-[#F5F5F7]">
+          {/* Bottom Hero Metadata Bar */}
+          <div className="mt-auto pt-10 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-6">
+            {/* Minimal Editorial Location & Academic Metadata */}
+            <div className="flex items-center gap-2.5">
+              <MapPin size={14} className="text-[#FF5500] shrink-0 opacity-90 stroke-[2.2]" />
+              <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 text-left">
+                <span className="font-sans text-xs sm:text-[13px] font-semibold text-[#EDEDED] tracking-tight">
                   Puzhakkal, Thrissur, Kerala, India
-                </div>
-                <div className="text-xs text-[#8E8E93]">
+                </span>
+                <span className="hidden sm:inline text-white/20 text-xs font-light">&bull;</span>
+                <span className="font-sans text-[11px] sm:text-xs text-[#8E8E93] tracking-normal">
                   B.Tech CSE-DS &bull; Christ College of Engineering
-                </div>
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-xs font-mono text-[#8E8E93]">
+            {/* Availability Indicator */}
+            <div className="flex items-center gap-2.5 text-[11px] sm:text-xs font-mono text-[#8E8E93]">
               <span className="relative flex h-2 w-2">
                 <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]" />
               </span>
-              <span>OPEN TO INTERNSHIPS &amp; COLLABORATIVE PROJECTS</span>
+              <span className="tracking-wider uppercase">OPEN TO INTERNSHIPS &amp; COLLABORATIVE PROJECTS</span>
             </div>
           </div>
         </section>
