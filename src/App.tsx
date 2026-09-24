@@ -23,7 +23,8 @@ import { IntroVideo } from './components/IntroVideo';
 import { CustomCursor } from './components/CustomCursor';
 import { GlitchText } from './components/GlitchText';
 import { FlyingProjects } from './components/FlyingProjects';
-import { SkillsSection } from './components/SkillsSection';
+import { HoneycombSkills } from './components/HoneycombSkills';
+import { scrollController } from './lib/scrollController';
 import { TOTAL_FRAMES } from './lib/scenes';
 import { linkedInPosts, linkedInProfile } from './data/linkedin';
 
@@ -373,10 +374,12 @@ const MILESTONES = [
 
 export default function App() {
   const [introFinished, setIntroFinished] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [currentTime, setCurrentTime] = useState('');
+
+  const headerRef = useRef<HTMLElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
 
   // Live Timezone Clock (IST / Asia/Kolkata)
   useEffect(() => {
@@ -397,9 +400,34 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Sync scroll progress
-  const handleProgressChange = useCallback((progress: number) => {
-    setScrollProgress(progress);
+  // Direct header & progress bar updates on single rAF tick without re-rendering App
+  useEffect(() => {
+    return scrollController.subscribe((state) => {
+      if (progressBarRef.current) {
+        progressBarRef.current.style.width = `${Math.round(state.globalProgress * 100)}%`;
+      }
+      if (headerRef.current) {
+        if (state.globalProgress > 0.02) {
+          headerRef.current.classList.add(
+            'bg-[#0A0A0C]/80',
+            'backdrop-blur-2xl',
+            'border-b',
+            'border-white/[0.08]',
+            'shadow-[0_10px_40px_rgba(0,0,0,0.6)]'
+          );
+          headerRef.current.classList.remove('bg-transparent', 'border-transparent');
+        } else {
+          headerRef.current.classList.remove(
+            'bg-[#0A0A0C]/80',
+            'backdrop-blur-2xl',
+            'border-b',
+            'border-white/[0.08]',
+            'shadow-[0_10px_40px_rgba(0,0,0,0.6)]'
+          );
+          headerRef.current.classList.add('bg-transparent', 'border-transparent');
+        }
+      }
+    });
   }, []);
 
   const scrollTo = useCallback((id: string) => {
@@ -421,7 +449,7 @@ export default function App() {
       <CustomCursor isActive={introFinished} />
 
       {/* ── 1. The Core 300-Frame Cinematic Scroll Canvas Engine ── */}
-      <CinematicCanvas onProgressChange={handleProgressChange} />
+      <CinematicCanvas />
 
       {/* ── 2. Floating Ambient Radial Glow with Gentle Keyframe Pulse ── */}
       <div
@@ -443,16 +471,14 @@ export default function App() {
 
       {/* ── 3. Floating Glass Navigation Header ── */}
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-          scrollProgress > 0.02
-            ? 'bg-[#0A0A0C]/80 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.6)]'
-            : 'bg-transparent border-b border-transparent'
-        }`}
+        ref={headerRef}
+        className="fixed top-0 inset-x-0 z-50 transition-all duration-500 bg-transparent border-b border-transparent"
       >
         {/* Top Scroll Progress Line */}
         <div
+          ref={progressBarRef}
           className="h-[2px] bg-gradient-to-r from-[#FF5500] via-[#FF6B2B] to-[#FFAA00] transition-all duration-75"
-          style={{ width: `${Math.round(scrollProgress * 100)}%` }}
+          style={{ width: '0%' }}
         />
 
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
@@ -1038,10 +1064,10 @@ export default function App() {
         </section>
 
         {/* ════════════════════════════════════════════════════════
-            SECTION E: TECHNICAL SKILLS & FOCUS AREAS
-            Interactive category selector + circular animated visuals
+            SECTION E: 3D HONEYCOMB SKILL NETWORK
+            Unified 3D hexagonal technology mesh.
         ════════════════════════════════════════════════════════ */}
-        <SkillsSection onContactClick={() => scrollTo('contact')} />
+        <HoneycombSkills onContactClick={() => scrollTo('contact')} />
 
         {/* ════════════════════════════════════════════════════════
             SIDE BUSINESS & DIGITAL BRANDS: DAILY VERSE

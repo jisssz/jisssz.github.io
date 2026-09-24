@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TOTAL_FRAMES, getFrameUrl } from '../lib/scenes';
+import { scrollController } from '../lib/scrollController';
 
 type Props = {
   onProgressChange?: (progress: number, frame: number) => void;
@@ -234,36 +235,32 @@ export function CinematicCanvas({ onProgressChange }: Props) {
     }
   }, [scheduleRender]);
 
-  // Native window scroll listener — single source of truth
+  // Single source of truth scroll subscriber
   useEffect(() => {
-    const onScroll = () => {
-      const scrollTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
-      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const progress = Math.min(1, Math.max(0, scrollTop / maxScroll));
-      const target = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(progress * (TOTAL_FRAMES - 1))));
+    resizeCanvas();
 
+    const unsubscribe = scrollController.subscribe((state) => {
+      const target = Math.min(
+        TOTAL_FRAMES - 1,
+        Math.max(0, Math.round(state.globalProgress * (TOTAL_FRAMES - 1)))
+      );
       targetFrameRef.current = target;
       if (onProgressChange) {
-        onProgressChange(progress, target + 1);
+        onProgressChange(state.globalProgress, target + 1);
       }
-
       scheduleRender();
       pumpQueue();
-    };
+    });
 
     const onResize = () => {
       resizeCanvas();
-      onScroll();
+      scrollController.recalculateMetrics();
     };
 
-    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
 
-    resizeCanvas();
-    onScroll();
-
     return () => {
-      window.removeEventListener('scroll', onScroll);
+      unsubscribe();
       window.removeEventListener('resize', onResize);
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);

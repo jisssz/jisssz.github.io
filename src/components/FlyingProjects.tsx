@@ -1,46 +1,27 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layers, ChevronDown } from 'lucide-react';
 import { FLYING_PROJECTS } from '../data/projects';
 import { ProjectPoster } from './ProjectPoster';
+import { scrollController } from '../lib/scrollController';
 
 export function FlyingProjects() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-
-  const targetProgressRef = useRef(0);
-  const currentProgressRef = useRef(0);
-  const rafIdRef = useRef<number | null>(null);
   const lastActiveIndexRef = useRef(0);
 
-  // Compute scroll progress through the tall showcase track
-  const handleScroll = useCallback(() => {
+  useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
 
-    const rect = section.getBoundingClientRect();
-    const totalDist = rect.height - window.innerHeight;
-    if (totalDist <= 0) return;
+    // Register section for deterministic coordinate metrics
+    const unregisterSection = scrollController.registerSection('showcase', section);
 
-    // Progress from 0.0 (top of section enters sticky) to 1.0 (bottom of section)
-    const rawProgress = -rect.top / totalDist;
-    targetProgressRef.current = Math.max(0, Math.min(1, rawProgress));
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
-    handleScroll();
-
-    // 60-120fps RAF interpolation loop with direct DOM transform writes
-    const updateTransforms = () => {
-      // Smooth lerp
-      const diffProgress = targetProgressRef.current - currentProgressRef.current;
-      currentProgressRef.current += diffProgress * 0.14;
-
+    // Direct transform renderer called on the unified rAF tick
+    const applyTransforms = (progress: number) => {
       const total = FLYING_PROJECTS.length;
-      // Map progress across total projects with entrance & exit buffer
-      const activeFloat = currentProgressRef.current * (total - 1);
+      // Deterministic mapping: physically attached to scroll position
+      const activeFloat = progress * (total - 1);
 
       // Update minimal index indicator only when integer index changes
       const currentInt = Math.max(0, Math.min(total - 1, Math.round(activeFloat)));
@@ -116,18 +97,19 @@ export function FlyingProjects() {
           cardEl.style.pointerEvents = pointerEvents;
         }
       }
-
-      rafIdRef.current = requestAnimationFrame(updateTransforms);
     };
 
-    rafIdRef.current = requestAnimationFrame(updateTransforms);
+    // Subscribe to unified scroll progress
+    const unsubscribeScroll = scrollController.subscribe((state) => {
+      const progress = state.getSectionProgress('showcase');
+      applyTransforms(progress);
+    });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      unregisterSection();
+      unsubscribeScroll();
     };
-  }, [handleScroll]);
+  }, []);
 
   return (
     <section
@@ -158,12 +140,12 @@ export function FlyingProjects() {
 
             {/* Micro Dot Segments */}
             <div className="hidden sm:flex items-center gap-1 ml-1.5">
-              {FLYING_PROJECTS.map((p, idx) => (
-                <span
-                  key={p.id}
+              {FLYING_PROJECTS.map((_, i) => (
+                <div
+                  key={i}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    idx === activeIndex
-                      ? 'w-4 bg-[#FF5500] shadow-[0_0_8px_#FF5500]'
+                    i === activeIndex
+                      ? 'w-4 bg-[#FF5500]'
                       : 'w-1.5 bg-white/20'
                   }`}
                 />
@@ -172,39 +154,40 @@ export function FlyingProjects() {
           </div>
         </div>
 
-        {/* Central 3D Perspective Stage */}
+        {/* Center 3D Flying Stage with Hardware Perspective */}
         <div
-          className="relative flex-1 w-full flex items-center justify-center pointer-events-auto my-auto"
+          className="relative w-full flex-1 flex items-center justify-center pointer-events-none"
           style={{
             perspective: '1200px',
-            perspectiveOrigin: '50% 50%',
-            transformStyle: 'preserve-3d',
+            perspectiveOrigin: 'center center',
           }}
         >
-          {FLYING_PROJECTS.map((project, idx) => (
-            <ProjectPoster
+          {FLYING_PROJECTS.map((project, i) => (
+            <div
               key={project.id}
-              ref={(el) => {
-                cardRefs.current[idx] = el;
+              ref={(el) => { cardRefs.current[i] = el; }}
+              className="absolute top-1/2 left-1/2 w-full max-w-lg sm:max-w-2xl md:max-w-3xl will-change-transform"
+              style={{
+                transformStyle: 'preserve-3d',
+                transformOrigin: 'center center',
               }}
-              project={project}
-              index={idx}
-              total={FLYING_PROJECTS.length}
-            />
+            >
+              <ProjectPoster project={project} index={i} total={FLYING_PROJECTS.length} />
+            </div>
           ))}
         </div>
 
-        {/* Bottom Minimal Hint */}
-        <div className="max-w-7xl mx-auto w-full flex items-center justify-between text-[11px] font-mono text-[#8E8E93] z-30">
-          <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#FF5500] animate-pulse" />
-            <span className="hidden sm:inline">SCROLL TO FLY THROUGH SPATIAL EXHIBITION</span>
-            <span className="sm:hidden">SCROLL TO EXPLORE</span>
+        {/* Bottom Editorial Scroll Prompt */}
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between text-xs font-mono text-[#8E8E93] pointer-events-auto z-30">
+          <div className="flex items-center gap-2 text-white/50">
+            <ChevronDown size={14} className="animate-bounce text-[#FF5500]" />
+            <span>SCROLL TO TRAVERSE 3D ARCHIVE</span>
           </div>
 
-          <div className="flex items-center gap-1.5 opacity-80">
-            <span>CONTINUE SCROLLING</span>
-            <ChevronDown size={13} className="animate-bounce" />
+          <div className="hidden md:flex items-center gap-4 text-[11px] text-[#8E8E93]">
+            <span>DEPTH: 360PX Z-STEP</span>
+            <span className="text-white/20">&bull;</span>
+            <span>60 FPS DETERMINISTIC MATRIX</span>
           </div>
         </div>
       </div>

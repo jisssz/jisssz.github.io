@@ -1,0 +1,80 @@
+/* ==========================================================================
+   3D HONEYCOMB SKILL NETWORK STYLING
+   Hardware-accelerated 3D transforms, glowing hexagonal filaments, and glass nodes
+   ========================================================================== */
+
+.honeycomb-stage {
+  perspective: 1200px;
+  perspective-origin: center center;
+  transform-style: preserve-3d;
+}
+
+.honeycomb-cluster {
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+  transition: transform 0.12s ease-out;
+}
+
+.honeycomb-node-wrapper {
+  position: absolute;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.3s ease;
+}
+
+/* Hexagonal Clip Path for pointy-topped cell */
+.hex-clip {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* Ambient Floating Keyframes for individual node micro-drift */
+@keyframes hexMicroFloatA {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(0.5deg);
+  }
+}
+
+@keyframes hexMicroFloatB {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(3.5px) rotate(-0.5deg);
+  }
+}
+
+@keyframes hexPulseGlow {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+.hex-anim-float-a {
+  animation: hexMicroFloatA 4.8s ease-in-out infinite;
+}
+
+.hex-anim-float-b {
+  animation: hexMicroFloatB 5.6s ease-in-out infinite;
+}
+
+.hex-pulse-glow {
+  animation: hexPulseGlow 3.6s ease-in-out infinite;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .honeycomb-cluster,
+  .honeycomb-node-wrapper,
+  .hex-anim-float-a,
+  .hex-anim-float-b,
+  .hex-pulse-glow {
+    animation: none !important;
+    transition: none !important;
+  }
+}
