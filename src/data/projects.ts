@@ -114,3 +114,116 @@ export const projects: Project[] = [
     githubUrl: 'https://github.com/jisssz',
   },
 ];
+
+export type FlyingProject = {
+  id: string;
+  number: string;
+  name: string;
+  descriptor: string;
+  description: string;
+  tech: string[];
+  category: string;
+  badge: string;
+  githubUrl: string;
+  accent: string;
+};
+
+export const FLYING_PROJECTS: FlyingProject[] = [
+  {
+    id: 'ai-shopping-assistant',
+    number: '01',
+    name: 'AI SHOPPING ASSISTANT',
+    descriptor: 'Modular Product Interaction, Authentication & DB Layer',
+    description: 'A desktop application built using Java Swing, JDBC, and MySQL featuring user authentication, product catalog management, and modular system design.',
+    tech: ['Java Swing', 'JDBC', 'MySQL', 'Desktop UI'],
+    category: 'DESKTOP APPLICATION',
+    badge: 'CORE OOP & DBMS',
+    githubUrl: 'https://github.com/jisssz',
+    accent: '#f59e0b',
+  },
+  {
+    id: 'greenpulse',
+    number: '02',
+    name: 'GREENPULSE',
+    descriptor: 'Civic Environmental Issue Reporting & Monitoring Platform',
+    description: 'A comprehensive civic platform for environmental issue reporting and resolution workflows. Features multi-role access (Citizen, Moderator, Field Worker, Admin), enforcement tracking, interactive geographic mapping, and civic reward mechanisms.',
+    tech: ['Spring Boot 3', 'React', 'JWT Security', 'JPA / Hibernate', 'PostgreSQL', 'Leaflet Maps'],
+    category: 'CIVIC PLATFORM',
+    badge: 'MAJOR CASE STUDY',
+    githubUrl: 'https://github.com/jisssz',
+    accent: '#ff5500',
+  },
+  {
+    id: 'ecoclassify-ai',
+    number: '03',
+    name: 'ECOCLASSIFY AI',
+    descriptor: 'Smart Waste Classification & Sorting Model',
+    description: 'An AI-powered web platform for real-time waste sorting and classification using Flask, client-side inference via TensorFlow.js, and an SQLAlchemy database backend.',
+    tech: ['Flask', 'TensorFlow.js', 'SQLAlchemy', 'Python', 'Computer Vision'],
+    category: 'AI / ML INFERENCE',
+    badge: 'AI & ML INFERENCE',
+    githubUrl: 'https://github.com/jisssz',
+    accent: '#ff7700',
+  },
+  {
+    id: 'ecopoints-platform',
+    number: '04',
+    name: 'ECOPOINTS PLATFORM',
+    descriptor: 'Reward-Based Waste Tagging, QR & Analytics Platform',
+    description: 'A civic waste management concept incorporating QR code tagging, user reward mechanisms, and environmental activity analytics.',
+    tech: ['QR Tagging', 'Civic Tech', 'Analytics', 'Web Application'],
+    category: 'WEB PLATFORM',
+    badge: 'SUSTAINABILITY TECH',
+    githubUrl: 'https://github.com/jisssz',
+    accent: '#ea580c',
+  },
+  {
+    id: 'food-spoilage-detection',
+    number: '05',
+    name: 'FOOD SPOILAGE DETECTION',
+    descriptor: 'Hardware / IoT Real-Time Spoilage Monitoring Device',
+    description: 'An embedded hardware prototype using Arduino and gas/temperature sensors to monitor and signal real-time food spoilage patterns.',
+    tech: ['Arduino', 'Hardware Sensors', 'Embedded C', 'Real-Time IoT'],
+    category: 'HARDWARE / IOT',
+    badge: 'HARDWARE PROTOTYPE',
+    githubUrl: 'https://github.com/jisssz',
+    accent: '#f97316',
+  },
+  {
+    id: 'medical-fitness-care',
+    number: '06',
+    name: 'MEDICAL FITNESS & CARE APP',
+    descriptor: 'Healthcare Consultation & Fitness Product Concept',
+    description: 'A digital healthcare product concept designed to streamline patient consultation and local medicine access. Pitched at EVOLV 1.0 startup competition.',
+    tech: ['Product Design', 'Healthcare UX', 'Strategy Pitch'],
+    category: 'PRODUCT CONCEPT',
+    badge: '3RD PLACE WINNER',
+    githubUrl: 'https://github.com/jisssz',
+    accent: '#fb923c',
+  },
+  {
+    id: 'useless-api-gateway',
+    number: '07',
+    name: 'USELESS API GATEWAY',
+    descriptor: 'TinkerHub Useless Projects 3.0 Backend & Gateway (Team HELL YEAH)',
+    description: 'A developer sandbox exploring microservice orchestration, lightweight Node.js/Render deployment, and unconventional public API endpoints.',
+    tech: ['React', 'Node.js', 'Express', 'Render Cloud', 'REST API'],
+    category: 'API GATEWAY',
+    badge: 'TINKERHUB 3.0',
+    githubUrl: 'https://github.com/jisssz',
+    accent: '#f97316',
+  },
+  {
+    id: 'dailyverse-automator',
+    number: '08',
+    name: 'DAILYVERSE AUTOMATOR',
+    descriptor: 'Automated Content Publishing Pipeline & Supabase Architecture',
+    description: 'Cloud and edge automation system engineered to synchronize content assets, coordinate multi-platform API publishing across Pinterest and YouTube, and automate digital brand operations.',
+    tech: ['React', 'TypeScript', 'Supabase', 'n8n Workflows', 'Pinterest API'],
+    category: 'AUTOMATION',
+    badge: 'TECHNICAL AUTOMATION',
+    githubUrl: 'https://github.com/jisssz',
+    accent: '#ea580c',
+  },
+];
+

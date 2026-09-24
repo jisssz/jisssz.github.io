@@ -22,6 +22,7 @@ import { CinematicCanvas } from './components/CinematicCanvas';
 import { IntroVideo } from './components/IntroVideo';
 import { CustomCursor } from './components/CustomCursor';
 import { GlitchText } from './components/GlitchText';
+import { FlyingProjects } from './components/FlyingProjects';
 import { TOTAL_FRAMES } from './lib/scenes';
 import { linkedInPosts, linkedInProfile } from './data/linkedin';
 
@@ -376,67 +377,6 @@ const SKILLS_TABS = [
   },
 ];
 
-// ── Marquee Showcase: Actual Technical & Product Projects ──
-const MARQUEE_ROW_1 = [
-  {
-    title: 'GREENPULSE',
-    subtitle: 'Civic Environmental Issue Reporting & Monitoring Platform',
-    cat: 'SPRING BOOT 3 &bull; REACT &bull; POSTGRESQL',
-    stat: 'MAJOR CASE STUDY',
-  },
-  {
-    title: 'ECOCLASSIFY AI',
-    subtitle: 'Smart Waste Classification & Sorting Model',
-    cat: 'FLASK &bull; TENSORFLOW &bull; SQLALCHEMY',
-    stat: 'AI & ML INFERENCE',
-  },
-  {
-    title: 'ECOPOINTS PLATFORM',
-    subtitle: 'Reward-Based Waste Tagging, QR & Analytics Platform',
-    cat: 'QR TAGGING &bull; REWARDS &bull; WEB APP',
-    stat: 'SUSTAINABILITY TECH',
-  },
-  {
-    title: 'LEGAL METROLOGY CHECKER',
-    subtitle: 'SIH 2026 Nominated • Offline-First WASM OCR Compliance PWA',
-    cat: 'REACT &bull; TESSERACT.JS &bull; FASTAPI',
-    stat: 'SIH 2026 TEAM LEADER',
-  },
-  {
-    title: 'AI SHOPPING ASSISTANT',
-    subtitle: 'Modular Product Interaction, Authentication & DB Layer',
-    cat: 'JAVA &bull; JAVA SWING &bull; JDBC &bull; MYSQL',
-    stat: 'DESKTOP APPLICATION',
-  },
-];
-
-const MARQUEE_ROW_2 = [
-  {
-    title: 'DAILYVERSE AUTOMATOR',
-    subtitle: 'Automated Content Publishing Pipeline & Supabase Architecture',
-    cat: 'REACT &bull; SUPABASE &bull; N8N &bull; PINTEREST API',
-    stat: 'TECHNICAL AUTOMATION',
-  },
-  {
-    title: 'FOOD SPOILAGE DETECTION',
-    subtitle: 'Hardware / IoT Real-Time Spoilage Monitoring Device',
-    cat: 'ARDUINO &bull; SENSORS &bull; REAL-TIME IOT',
-    stat: 'HARDWARE PROTOTYPE',
-  },
-  {
-    title: 'MEDICAL FITNESS & CARE APP',
-    subtitle: 'Healthcare Consultation & Fitness Product Concept',
-    cat: 'EVOLV 1.0 PITCHATHON',
-    stat: '3RD PLACE WINNER',
-  },
-  {
-    title: 'USELESS API GATEWAY',
-    subtitle: 'TinkerHub Useless Projects 3.0 Backend & Gateway (Team HELL YEAH)',
-    cat: 'REACT &bull; NODE.JS &bull; RENDER',
-    stat: 'API GATEWAY',
-  },
-];
-
 // ── Achievements, Experience & Leadership Milestones ──
 const MILESTONES = [
   {
@@ -514,7 +454,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#080808] text-[#F5F5F7] font-sans selection:bg-[#FF5500] selection:text-[#080808] overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#080808] text-[#F5F5F7] font-sans selection:bg-[#FF5500] selection:text-[#080808] overflow-x-clip">
       {/* ── 0. Cinematic Motion-Graphics Video Intro / Loading Scene ── */}
       {!introFinished && (
         <IntroVideo onComplete={() => setIntroFinished(true)} />
@@ -775,65 +715,10 @@ export default function App() {
         </section>
 
         {/* ════════════════════════════════════════════════════════
-            SECTION B: HORIZONTAL MARQUEE WORK STRIP
-            Fast dual-row carousel with pause-on-hover.
+            SECTION B: 3D FLYING PROJECT POSTERS
+            Scroll-driven depth presentation layered over cinematic canvas.
         ════════════════════════════════════════════════════════ */}
-        <section id="showcase" className="relative py-20 overflow-hidden pause-hover">
-          <div className="max-w-7xl mx-auto px-6 sm:px-10 mb-8 flex items-center justify-between">
-            <div className="font-mono text-xs font-semibold text-[#FF5500] tracking-wider">
-              [ 01 / SELECTED WORK &bull; PROJECTS &amp; EXPERIMENTS ]
-            </div>
-            <div className="text-xs text-[#8E8E93]">
-              HOVER TO PAUSE &bull; NATIVE VELOCITY
-            </div>
-          </div>
-
-          {/* Row 1: Forward Marquee */}
-          <div className="relative w-full overflow-hidden mb-4">
-            <div className="animate-marquee gap-5">
-              {[...MARQUEE_ROW_1, ...MARQUEE_ROW_1].map((item, idx) => (
-                <div
-                  key={`r1-${idx}`}
-                  className="w-[300px] sm:w-[380px] shrink-0 rounded-2xl framer-bento-glass p-6"
-                >
-                  <div className="flex items-center justify-between text-[11px] font-mono text-[#8E8E93] mb-3">
-                    <span className="text-[#FF5500] font-bold">{item.cat}</span>
-                    <span>{item.stat}</span>
-                  </div>
-                  <h3 className="font-display font-extrabold text-lg text-[#F5F5F7]">
-                    {item.title}
-                  </h3>
-                  <p className="mt-1 text-xs text-[#8E8E93]">
-                    {item.subtitle}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Row 2: Reverse Marquee */}
-          <div className="relative w-full overflow-hidden">
-            <div className="animate-marquee-reverse gap-5">
-              {[...MARQUEE_ROW_2, ...MARQUEE_ROW_2].map((item, idx) => (
-                <div
-                  key={`r2-${idx}`}
-                  className="w-[300px] sm:w-[380px] shrink-0 rounded-2xl framer-bento-glass p-6"
-                >
-                  <div className="flex items-center justify-between text-[11px] font-mono text-[#8E8E93] mb-3">
-                    <span className="text-[#FF5500] font-bold">{item.cat}</span>
-                    <span>{item.stat}</span>
-                  </div>
-                  <h3 className="font-display font-extrabold text-lg text-[#F5F5F7]">
-                    {item.title}
-                  </h3>
-                  <p className="mt-1 text-xs text-[#8E8E93]">
-                    {item.subtitle}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <FlyingProjects />
 
         {/* ════════════════════════════════════════════════════════
             SECTION C: EDUCATION, METRICS & BENTO DASHBOARD
