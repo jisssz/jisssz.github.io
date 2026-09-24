@@ -629,35 +629,35 @@ export default function App() {
         ════════════════════════════════════════════════════════ */}
         <section
           id="hero"
-          className="relative min-h-[100dvh] flex flex-col justify-between px-6 sm:px-10 md:px-16 pt-32 pb-14 max-w-7xl mx-auto"
+          className="relative min-h-[100dvh] flex flex-col justify-between px-6 sm:px-10 lg:px-10 xl:px-12 pt-32 pb-14 w-full max-w-[1720px] mx-auto"
         >
-          {/* Top Asymmetric Headline Grid */}
-          <div className="grid lg:grid-cols-12 gap-8 items-start mt-6 sm:mt-10">
-            {/* Left Headline */}
-            <div className="lg:col-span-7">
+          {/* Top Asymmetric Headline Flex: Left Zone | Clear Face Corridor | Right Zone */}
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mt-6 sm:mt-10 w-full">
+            {/* Left Zone: JIS SHAJAN & Tagline (anchored strictly to left margin) */}
+            <div className="w-full lg:w-[320px] xl:w-[380px] shrink-0">
               <div className="relative">
                 <h1 className="font-display font-extrabold tracking-tight">
                   <GlitchText
                     speed={0.45}
                     enableShadows={true}
                     enableOnHover={false}
-                    className="font-display font-extrabold tracking-tight text-white select-none block leading-[0.92] text-4xl sm:text-6xl md:text-7xl lg:text-[5.25rem] xl:text-[6rem]"
+                    className="font-display font-extrabold tracking-tight text-white select-none block leading-[0.92] text-4xl sm:text-5xl md:text-5xl lg:text-[2.85rem] xl:text-[3.35rem]"
                   >
                     JIS SHAJAN
                   </GlitchText>
-                  <span className="text-[#FF5500] text-3xl sm:text-5xl md:text-6xl block font-display font-extrabold leading-tight mt-3 sm:mt-4">
+                  <span className="text-[#FF5500] text-2xl sm:text-3xl md:text-3xl lg:text-[1.75rem] xl:text-[2.1rem] block font-display font-extrabold leading-tight mt-3 sm:mt-4">
                     Building at the Intersection.
                   </span>
                 </h1>
               </div>
             </div>
 
-            {/* Right Supporting Copy & Dual-Pill CTA */}
-            <div className="lg:col-span-5 lg:pt-6 lg:pl-6 space-y-4">
-              <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-[#F5F5F7] leading-snug drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
+            {/* Right Zone: Supporting Copy & Dual-Pill CTA (anchored strictly to right margin) */}
+            <div className="w-full lg:w-[310px] xl:w-[360px] shrink-0 lg:pt-3 space-y-4 lg:ml-auto">
+              <h2 className="font-display text-xl sm:text-2xl lg:text-2xl xl:text-[1.75rem] font-bold text-[#F5F5F7] leading-snug drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
                 Technology, Data, Product &amp; Innovation.
               </h2>
-              <p className="text-sm sm:text-base text-[#8E8E93] leading-relaxed max-w-md drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+              <p className="text-sm sm:text-base lg:text-[13px] xl:text-sm text-[#8E8E93] leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                 I am a Computer Science undergraduate interested in building practical technology solutions, exploring data-driven systems, and combining technical development with product, project management, and business thinking.
               </p>
 
