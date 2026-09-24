@@ -23,6 +23,7 @@ import { IntroVideo } from './components/IntroVideo';
 import { CustomCursor } from './components/CustomCursor';
 import { GlitchText } from './components/GlitchText';
 import { FlyingProjects } from './components/FlyingProjects';
+import { SkillsSection } from './components/SkillsSection';
 import { TOTAL_FRAMES } from './lib/scenes';
 import { linkedInPosts, linkedInProfile } from './data/linkedin';
 
@@ -334,49 +335,6 @@ const FAQ_ITEMS = [
   },
 ];
 
-// ── Tabbed Skills & Focus Areas Data ──
-const SKILLS_TABS = [
-  {
-    id: 'programming',
-    label: 'Programming & Core Computer Science',
-    tag: '[ 01 // FOUNDATIONS ]',
-    summary: 'Strong algorithmic foundation, object-oriented software design, clean coding practices, and core systems knowledge.',
-    deliverables: [
-      'Python, Java, C, JavaScript, HTML, CSS, SQL, Shell',
-      'Data Structures & Algorithms (DSA)',
-      'Object-Oriented Programming (OOP) & Clean Code',
-      'Operating Systems & Database Management Systems (DBMS)',
-    ],
-    highlight: 'Core CS & Systems',
-  },
-  {
-    id: 'frameworks',
-    label: 'Frameworks, Libraries & Machine Learning',
-    tag: '[ 02 // FULL-STACK & AI ]',
-    summary: 'Modern reactive frontend development, scalable Java Spring Boot backend services, and machine learning pipelines.',
-    deliverables: [
-      'React.js, Vite, Tailwind CSS, Bootstrap',
-      'Spring Boot 3, Spring Security, Hibernate, JPA',
-      'TensorFlow, TensorFlow.js, NumPy, Data Analytics',
-      'Flask, SQLAlchemy, RESTful API Architecture',
-    ],
-    highlight: 'Spring Boot, React & ML',
-  },
-  {
-    id: 'tools',
-    label: 'Developer Tools & Project Management',
-    tag: '[ 03 // WORKFLOWS & OPS ]',
-    summary: 'Professional developer toolchains, version control, API testing, and collaborative project management platforms.',
-    deliverables: [
-      'Git, GitHub, Linux / Unix Shell Scripting',
-      'VS Code, Postman API Testing & Debugging',
-      'Zoho Ecosystem, Google Sheets & n8n Automation',
-      'Code Optimization & Version Control Workflows',
-    ],
-    highlight: 'Dev Tools & Zoho Stack',
-  },
-];
-
 // ── Achievements, Experience & Leadership Milestones ──
 const MILESTONES = [
   {
@@ -417,7 +375,6 @@ export default function App() {
   const [introFinished, setIntroFinished] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('programming');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [currentTime, setCurrentTime] = useState('');
 
@@ -1082,110 +1039,9 @@ export default function App() {
 
         {/* ════════════════════════════════════════════════════════
             SECTION E: TECHNICAL SKILLS & FOCUS AREAS
-            Tabbed switchable competencies.
+            Interactive category selector + circular animated visuals
         ════════════════════════════════════════════════════════ */}
-        <section id="skills" className="relative py-28 sm:py-36 px-6 sm:px-10 md:px-16 max-w-7xl mx-auto">
-          <div className="mb-14">
-            <div className="font-mono text-xs font-semibold text-[#FF5500] mb-2 uppercase tracking-wider">
-              [ 04 / TECHNICAL SKILLS &bull; CORE COMPETENCIES ]
-            </div>
-            <h2 className="font-display font-extrabold text-4xl sm:text-6xl text-[#F5F5F7] tracking-tight">
-              What I Build &amp; Tools I Use.
-            </h2>
-          </div>
-
-          {/* Interactive Switchable Tabs */}
-          <div className="grid lg:grid-cols-12 gap-8 items-start">
-            {/* Tabs List */}
-            <div className="lg:col-span-5 space-y-3">
-              {SKILLS_TABS.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 cursor-pointer ${
-                      isActive
-                        ? 'bg-[#16161A] border-[#FF5500]/60 shadow-[0_10px_30px_rgba(255,85,0,0.15)] -translate-y-0.5'
-                        : 'bg-[#121214]/80 border-white/[0.08] hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs font-mono mb-2">
-                      <span className={isActive ? 'text-[#FF5500] font-bold' : 'text-[#8E8E93]'}>
-                        {tab.tag}
-                      </span>
-                      <span className="text-[11px] text-[#8E8E93]">{tab.highlight}</span>
-                    </div>
-                    <h3
-                      className={`font-display text-lg sm:text-xl font-bold transition-colors ${
-                        isActive ? 'text-[#F5F5F7]' : 'text-[#8E8E93]'
-                      }`}
-                    >
-                      {tab.label}
-                    </h3>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Active Panel Content */}
-            <div className="lg:col-span-7">
-              {SKILLS_TABS.map((tab) => {
-                if (tab.id !== activeTab) return null;
-                return (
-                  <div
-                    key={`panel-${tab.id}`}
-                    className="rounded-[32px] framer-bento-glass p-8 sm:p-10"
-                  >
-                    <div className="flex items-center justify-between text-xs font-mono text-[#8E8E93] mb-4">
-                      <span className="text-[#FF5500] font-bold">{tab.tag}</span>
-                      <span className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-white">
-                        {tab.highlight}
-                      </span>
-                    </div>
-
-                    <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-[#F5F5F7]">
-                      {tab.label}
-                    </h3>
-
-                    <p className="mt-3 text-sm text-[#8E8E93] leading-relaxed">
-                      {tab.summary}
-                    </p>
-
-                    <div className="mt-8 pt-6 border-t border-white/[0.08]">
-                      <div className="text-xs font-mono font-bold text-[#F5F5F7] uppercase tracking-wider mb-4">
-                        Core Competencies &amp; Technologies:
-                      </div>
-                      <div className="grid sm:grid-cols-2 gap-3.5">
-                        {tab.deliverables.map((item, idx) => (
-                          <div key={idx} className="flex items-start gap-2.5 text-xs text-[#F5F5F7]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#FF5500] mt-1.5 shrink-0" />
-                            <span>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mt-8 pt-6 border-t border-white/[0.08] flex items-center justify-between">
-                      <span className="font-mono text-xs text-[#8E8E93]">
-                        Focus: Software Development &amp; Data Science
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => scrollTo('contact')}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF5500] hover:underline cursor-pointer"
-                      >
-                        <span>Discuss Opportunities</span>
-                        <ArrowUpRight size={13} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+        <SkillsSection onContactClick={() => scrollTo('contact')} />
 
         {/* ════════════════════════════════════════════════════════
             SIDE BUSINESS & DIGITAL BRANDS: DAILY VERSE
