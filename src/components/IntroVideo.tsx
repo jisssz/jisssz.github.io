@@ -17,7 +17,9 @@ export function IntroVideo({
     }
     return 'loading';
   });
-  const [isMuted, setIsMuted] = useState(true);
+  // Default audio intent is SOUND ON (isMuted = false); updated if browser blocks unmuted autoplay
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
 
   // Finish intro with 650ms smooth fade transition into existing portfolio
   const finishIntro = useCallback(() => {
@@ -39,17 +41,26 @@ export function IntroVideo({
     return () => clearTimeout(timer);
   }, [onComplete]);
 
-  // Toggle audio mute state safely
-  const toggleMute = useCallback((e?: React.MouseEvent) => {
+  // Handle single-click audio activation / toggle
+  const handleAudioAction = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     const video = videoRef.current;
     if (!video) return;
-    const nextMuted = !video.muted;
-    video.muted = nextMuted;
-    if (!nextMuted) {
+
+    if (video.muted) {
+      // Unmute and ensure full volume without pausing or restarting video
+      video.muted = false;
       video.volume = 1;
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+      setIsMuted(false);
+      setAudioBlocked(false);
+    } else {
+      // Mute audio
+      video.muted = true;
+      setIsMuted(true);
     }
-    setIsMuted(nextMuted);
   }, []);
 
   // Lock body scroll during intro; restore upon exit
@@ -65,7 +76,7 @@ export function IntroVideo({
     };
   }, [phase, onComplete]);
 
-  // Support Escape key to skip intro and M key to toggle mute while active
+  // Support Escape key to skip intro and M key to toggle/enable audio while active
   useEffect(() => {
     if (phase === 'hidden' || phase === 'fading') return;
 
@@ -73,38 +84,64 @@ export function IntroVideo({
       if (e.key === 'Escape') {
         finishIntro();
       } else if (e.key === 'm' || e.key === 'M') {
-        toggleMute();
+        handleAudioAction();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [phase, finishIntro, toggleMute]);
+  }, [phase, finishIntro, handleAudioAction]);
 
-  // Attempt unmuted autoplay first; gracefully fall back to muted autoplay if blocked by browser policy
+  // Synchronize isMuted with actual video element state
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onVolumeChange = () => {
+      setIsMuted(video.muted);
+    };
+
+    video.addEventListener('volumechange', onVolumeChange);
+    return () => {
+      video.removeEventListener('volumechange', onVolumeChange);
+    };
+  }, []);
+
+  // Prioritize SOUND-ON autoplay: attempt unmuted first; gracefully fall back to muted if browser blocks it
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     let isMounted = true;
+    let hasStarted = false;
 
     const startPlayback = async () => {
-      if (!isMounted) return;
+      if (!isMounted || hasStarted) return;
+      hasStarted = true;
+
+      // Clean up event listeners so subsequent ready events do not re-trigger
+      video.removeEventListener('loadeddata', handleReady);
+      video.removeEventListener('canplay', handleReady);
+
+      // 1. Default intended state = SOUND ON
+      video.muted = false;
+      video.volume = 1;
+
       try {
-        // Attempt unmuted autoplay
-        video.muted = false;
-        video.volume = 1;
+        // Attempt unmuted autoplay immediately
         await video.play();
         if (isMounted) {
           setIsMuted(false);
+          setAudioBlocked(false);
           setPhase('playing');
         }
       } catch {
-        // Browser rejected unmuted autoplay -> fall back to muted autoplay immediately without delaying video
+        // Browser rejected unmuted autoplay -> fall back immediately to muted playback so video is not stuck
         try {
           video.muted = true;
           await video.play();
           if (isMounted) {
             setIsMuted(true);
+            setAudioBlocked(true);
             setPhase('playing');
           }
         } catch (fallbackErr) {
@@ -116,17 +153,21 @@ export function IntroVideo({
       }
     };
 
+    const handleReady = () => {
+      startPlayback();
+    };
+
     if (video.readyState >= 2) {
       startPlayback();
     } else {
-      video.addEventListener('loadeddata', startPlayback, { once: true });
-      video.addEventListener('canplay', startPlayback, { once: true });
+      video.addEventListener('loadeddata', handleReady, { once: true });
+      video.addEventListener('canplay', handleReady, { once: true });
     }
 
     return () => {
       isMounted = false;
-      video.removeEventListener('loadeddata', startPlayback);
-      video.removeEventListener('canplay', startPlayback);
+      video.removeEventListener('loadeddata', handleReady);
+      video.removeEventListener('canplay', handleReady);
     };
   }, [finishIntro]);
 
@@ -146,7 +187,6 @@ export function IntroVideo({
         ref={videoRef}
         src={videoSrc}
         className="w-full h-full max-w-full max-h-full object-contain object-center bg-[#000000]"
-        autoPlay
         playsInline
         preload="auto"
         onEnded={finishIntro}
@@ -156,24 +196,52 @@ export function IntroVideo({
       {/* ── Subtle Theme-Matched Controls in Bottom-Right ── */}
       {phase !== 'fading' && (
         <div className="absolute bottom-5 right-5 sm:bottom-6 sm:right-6 z-30 flex items-center gap-2 sm:gap-3">
-          {/* Audio Mute / Unmute Button */}
+          {/* Audio Control Button */}
           <button
             type="button"
-            onClick={toggleMute}
-            className="group inline-flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/10 hover:border-[#FF5500]/50 backdrop-blur-xl text-white font-mono text-xs font-semibold tracking-wider transition-all duration-300 shadow-lg cursor-pointer select-none"
-            aria-label={isMuted ? 'Unmute video audio' : 'Mute video audio'}
-            title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
+            onClick={handleAudioAction}
+            className={`group inline-flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border backdrop-blur-xl font-mono text-xs font-semibold tracking-wider transition-all duration-300 shadow-lg cursor-pointer select-none ${
+              audioBlocked && isMuted
+                ? 'border-[#FF5500]/60 hover:border-[#FF5500] text-[#FF5500] shadow-[0_0_15px_rgba(255,85,0,0.25)]'
+                : 'border-white/10 hover:border-[#FF5500]/50 text-white'
+            }`}
+            aria-label={
+              audioBlocked && isMuted
+                ? 'Enable video sound'
+                : isMuted
+                ? 'Unmute video audio'
+                : 'Mute video audio'
+            }
+            title={
+              audioBlocked && isMuted
+                ? 'Enable Sound (M)'
+                : isMuted
+                ? 'Unmute (M)'
+                : 'Mute (M)'
+            }
           >
             {isMuted ? (
-              <>
-                <VolumeX
-                  size={14}
-                  className="text-white/70 group-hover:text-[#FF5500] transition-colors"
-                />
-                <span className="text-[11px] text-white/70 group-hover:text-white transition-colors">
-                  UNMUTE
-                </span>
-              </>
+              audioBlocked ? (
+                <>
+                  <VolumeX
+                    size={14}
+                    className="text-[#FF5500] animate-pulse"
+                  />
+                  <span className="text-[11px] text-[#FF5500] font-semibold tracking-wider">
+                    ENABLE SOUND
+                  </span>
+                </>
+              ) : (
+                <>
+                  <VolumeX
+                    size={14}
+                    className="text-white/70 group-hover:text-[#FF5500] transition-colors"
+                  />
+                  <span className="text-[11px] text-white/70 group-hover:text-white transition-colors">
+                    UNMUTE
+                  </span>
+                </>
+              )
             ) : (
               <>
                 <Volume2
