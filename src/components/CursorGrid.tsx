@@ -59,17 +59,17 @@ const hexToRgb = (hex: string): [number, number, number] => {
 export const CursorGrid: FC<CursorGridProps> = ({
   cellSize = 70,
   color = '#FF5A1F',
-  radius = 140,
+  radius = 170,
   falloff = 'smooth',
   holdTime = 400,
-  fadeDuration = 800,
-  lineWidth = 1,
-  maxOpacity = 0.45,
+  fadeDuration = 850,
+  lineWidth = 1.2,
+  maxOpacity = 0.85,
   fillOpacity = 0,
   gridOpacity = 0,
   cellRadius = 0,
   clickPulse = true,
-  pulseSpeed = 600,
+  pulseSpeed = 650,
   className = '',
   isActive = true,
 }) => {
@@ -77,13 +77,16 @@ export const CursorGrid: FC<CursorGridProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wakeRef = useRef<(() => void) | null>(null);
 
-  // Device & accessibility capabilities check
+  // Robust device & accessibility capabilities check:
+  // Enabled for all desktops, laptops (including touch-laptops), and fine-pointer devices.
+  // Disabled on pure mobile/touch-only phones and when prefers-reduced-motion is active.
   const [isSupported] = useState(() => {
     if (typeof window === 'undefined') return false;
-    const isCoarse = window.matchMedia('(pointer: coarse)').matches;
-    const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+    const hasFine = window.matchMedia('(any-pointer: fine)').matches || window.matchMedia('(pointer: fine)').matches;
+    const isTouchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches;
+    const isSmall = window.innerWidth < 768;
     const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    return hasFinePointer && !isCoarse && !isReduced;
+    return (hasFine || !isTouchOnly) && !isSmall && !isReduced;
   });
 
   const propsRef = useRef<GridConfig>({
@@ -282,6 +285,7 @@ export const CursorGrid: FC<CursorGridProps> = ({
         const [cx, cy] = cellCenter(i);
         const gradient = ctx.createRadialGradient(cx, cy, half * 0.1, cx, cy, p.cellSize);
         gradient.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, ${a})`);
+        gradient.addColorStop(0.65, `rgba(${cr}, ${cg}, ${cb}, ${a * 0.75})`);
         gradient.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
 
         const x = cx - half + 0.5;
