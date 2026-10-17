@@ -696,7 +696,7 @@ export default function App() {
               <MapPin size={14} className="text-[#FF5500] shrink-0 opacity-90 stroke-[2.2]" />
               <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 text-left">
                 <span className="font-sans text-xs sm:text-[13px] font-semibold text-[#EDEDED] tracking-tight">
-                  Puzhakkal, Thrissur, Kerala, India
+                  East Fort, Thrissur, Kerala, India
                 </span>
                 <span className="hidden sm:inline text-white/20 text-xs font-light">&bull;</span>
                 <span className="font-sans text-[11px] sm:text-xs text-[#8E8E93] tracking-normal">
