@@ -25,6 +25,7 @@ import { CursorGrid } from './components/CursorGrid';
 import { GlitchText } from './components/GlitchText';
 import { FlyingProjects } from './components/FlyingProjects';
 import { HoneycombSkills } from './components/HoneycombSkills';
+import { HeroActivityWidgets } from './components/HeroActivityWidgets';
 import { scrollController } from './lib/scrollController';
 import { TOTAL_FRAMES } from './lib/scenes';
 import { linkedInPosts, linkedInProfile } from './data/linkedin';
@@ -654,6 +655,10 @@ export default function App() {
                   </span>
                 </h1>
               </div>
+              {/* Compact LeetCode & GitHub Activity Widgets (Desktop: bottom-left below tagline) */}
+              <div className="hidden lg:block mt-6 xl:mt-8">
+                <HeroActivityWidgets />
+              </div>
             </div>
 
             {/* Right Zone: Supporting Copy & Dual-Pill CTA (anchored strictly to right margin) */}
@@ -675,6 +680,11 @@ export default function App() {
                   <span>LET&apos;S CONNECT</span>
                   <ArrowDown size={14} />
                 </button>
+              </div>
+
+              {/* Compact LeetCode & GitHub Activity Widgets (Mobile/Tablet: below CTAs in dark safe area) */}
+              <div className="block lg:hidden pt-4">
+                <HeroActivityWidgets />
               </div>
             </div>
           </div>
