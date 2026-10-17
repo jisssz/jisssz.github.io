@@ -69,6 +69,18 @@ export function CinematicCanvas({ onProgressChange }: Props) {
     // Draw full uncropped image
     ctx.drawImage(img, ox, oy, rw, rh);
 
+    // Seamlessly eliminate the persistent AI generator watermark (Gemini logo at bottom-right)
+    // by sampling the adjacent clean background texture from the exact same frame
+    const patchW = 88;
+    const patchH = 88;
+    const patchSx = 1795;
+    const patchSy = 856;
+    const patchDx = ox + 1696 * scale;
+    const patchDy = oy + 856 * scale;
+    const patchDw = patchW * scale;
+    const patchDh = patchH * scale;
+    ctx.drawImage(img, patchSx, patchSy, patchW, patchH, patchDx, patchDy, patchDw, patchDh);
+
     // Soft edge feathering if frame does not completely cover viewport, eliminating any hard rectangular edges
     const dpr = window.devicePixelRatio || 1;
     const featherX = Math.round(40 * dpr);
