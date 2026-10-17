@@ -496,17 +496,12 @@ export default function App() {
           <button
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="group flex items-center gap-3 text-left cursor-pointer"
+            className="group flex items-center text-left cursor-pointer"
+            title="Scroll to top"
+            aria-label="Scroll to top"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06] border border-white/10 font-mono text-xs font-bold text-[#FF5500] group-hover:border-[#FF5500]/50 transition-all">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06] border border-white/10 font-mono text-xs font-bold text-[#FF5500] group-hover:border-[#FF5500]/50 group-hover:bg-[#FF5500]/10 transition-all">
               JS
-            </span>
-            <span className="font-display text-base sm:text-lg font-extrabold tracking-tight text-[#F5F5F7] group-hover:text-[#FF5500] transition-colors">
-              JIS SHAJAN
-            </span>
-            <span className="relative flex h-2 w-2">
-              <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-[#FF5500] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF5500]" />
             </span>
           </button>
 
