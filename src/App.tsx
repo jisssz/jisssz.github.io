@@ -492,24 +492,6 @@ export default function App() {
         />
 
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          {/* Logo / Personal Monogram Badge */}
-          <button
-            type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="group flex items-center text-left cursor-pointer"
-            title="Scroll to top"
-            aria-label="Scroll to top"
-          >
-            <span className="relative flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg overflow-hidden border border-white/15 bg-white/[0.06] group-hover:border-[#FF5500]/70 group-hover:shadow-[0_0_14px_rgba(255,85,0,0.4)] transition-all">
-              <img
-                src="/jis-avatar.png"
-                alt="Jis Shajan"
-                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="eager"
-              />
-            </span>
-          </button>
-
           {/* Desktop Navigation Links with Double-Text Hover Effect */}
           <nav className="hidden md:flex items-center gap-7 font-sans text-xs font-semibold uppercase tracking-wider text-[#8E8E93]">
             {[
@@ -547,7 +529,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg bg-white/[0.05] text-[#F5F5F7] border border-white/10"
+            className="md:hidden ml-auto p-2 rounded-lg bg-white/[0.05] text-[#F5F5F7] border border-white/10"
             aria-label="Toggle Navigation"
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
