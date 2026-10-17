@@ -500,8 +500,13 @@ export default function App() {
             title="Scroll to top"
             aria-label="Scroll to top"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06] border border-white/10 font-mono text-xs font-bold text-[#FF5500] group-hover:border-[#FF5500]/50 group-hover:bg-[#FF5500]/10 transition-all">
-              JS
+            <span className="relative flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg overflow-hidden border border-white/15 bg-white/[0.06] group-hover:border-[#FF5500]/70 group-hover:shadow-[0_0_14px_rgba(255,85,0,0.4)] transition-all">
+              <img
+                src="/jis-avatar.png"
+                alt="Jis Shajan"
+                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="eager"
+              />
             </span>
           </button>
 
